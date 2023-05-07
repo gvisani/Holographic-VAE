@@ -1,0 +1,56 @@
+
+
+# data hparams
+data_filepath: '/gscratch/scrubbed/gvisan01/data/zernike/casp12_{}_zernikegrams-yes_residue-yes_sidechain-lmax=%d-r=%.1f-rst_normalization=%s.hdf5'
+rcut: 10.0
+lmax: 6
+rmax: 20
+channels: ['C', 'N', 'O', 'S']
+rst_normalization: 'square'
+collected_lmax: 6
+get_psysicochemical_info_for_hydrogens: False
+
+normalize_input: true
+
+# model hparams
+model_hparams: 
+  latent_dim: 128
+  net_lmax: 6
+  ch_size_list: [60, 60, 60, 90, 128, 128]
+  lmax_list: [6, 6, 6, 4, 2, 1]
+  ls_nonlin_rule_list: ['efficient', 'efficient', 'efficient', 'efficient', 'efficient', 'efficient']
+  ch_nonlin_rule_list: ['elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise']
+  do_initial_linear_projection: true
+  ch_initial_linear_projection: 44
+  use_additive_skip_connections: true
+  use_batch_norm: true
+  norm_type: 'signal'
+  norm_location: 'between'
+  normalization: 'component'
+  norm_affine: 'per_l'
+  linearity_first: false
+  learn_frame: true
+  is_vae: false
+  norm_nonlinearity: null
+  norm_balanced: false
+  bottleneck_hidden_dims: null
+  weights_initializer: null
+  filter_symmetric: true
+  x_rec_loss_fn: 'mse'
+  do_final_signal_norm: false
+
+
+# training hparams
+weight_decay: false
+n_epochs: 10
+no_kl_epochs: 0
+warmup_kl_epochs: 0
+lr: 0.001
+lr_scheduler: 'constant' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
+batch_size: 512
+lambdas: [1000.0, 0.0]
+lambdas_schedule: 'constant' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
+
+
+# rng seed
+seed: 123456789

@@ -1,0 +1,15 @@
+*.pkl
+*.pdf
+*.png
+*.pt
+*.npy
+*.npz
+*.err
+*.log
+*.out
+*.json
+*.csv
+*.gz
+*.hdf5
+*.txt
+*.pdb

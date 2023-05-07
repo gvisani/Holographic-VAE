@@ -1,0 +1,11 @@
+Metadata-Version: 2.1
+Name: holographic-vae
+Version: 0.0
+Summary: SO(3)-equivariant (variational) autoencoder for spherical images and atom-centered atomic environments.
+Home-page: https://github.com/gvisani/holographic_vae
+Author: Gian Marco Visani
+Author-email: gvisan01@cs.washington.edu
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+
+# Holographic-VAE
