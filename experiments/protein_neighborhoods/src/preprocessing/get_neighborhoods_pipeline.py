@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parser.add_argument('--output_dataset_name', type=str, default='data',
                         help='Name of the dataset within output_hdf5 where the neighborhoods information will be saved. We recommend keeping this set to simply "data".')
     parser.add_argument('--parallelism', type=int, default=1,
-                        help='Parallelis count for multiprocessing')
+                        help='Parallelism count for multiprocessing')
     parser.add_argument('--radius', type=float, default=10.0,
                         help='Radius of the neighborhoods. Alias of "rcut".')
     parser.add_argument('--remove_central_residue', type=str_to_bool, default=False,
