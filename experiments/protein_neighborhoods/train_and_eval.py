@@ -15,7 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('--training_config', type=optional_str, default='config.yaml',
                         help='Ignored when --eval_only is toggled.')
     
-    parser.add_argument('--eval_only', action='store_true')
+    parser.add_argument('--eval_only', action='store_true',
+                        help='If toggled, then only perform inference and evaluation on the standard test data.')
 
     args = parser.parse_args()
 
