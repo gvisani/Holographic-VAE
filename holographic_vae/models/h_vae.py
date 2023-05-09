@@ -61,7 +61,8 @@ class H_VAE(torch.nn.Module):
                  w3j_matrices: Dict[int, Tensor],
                  hparams: Dict,
                  device: str,
-                 normalize_input_at_runtime: bool = False
+                 normalize_input_at_runtime: bool = False,
+                 verbose: bool = False
                  ):
         super().__init__()
 
@@ -72,12 +73,12 @@ class H_VAE(torch.nn.Module):
 
 
         if self.do_initial_linear_projection:
-            print(irreps_in.dim, irreps_in)
+            if verbose: print(irreps_in.dim, irreps_in)
             initial_irreps = (self.ch_initial_linear_projection*o3.Irreps.spherical_harmonics(max(irreps_in.ls), 1)).sort().irreps.simplify()
             self.initial_linear_projection = nn.SO3_linearity(irreps_in, initial_irreps)
-            print(initial_irreps.dim, initial_irreps)
+            if verbose: print(initial_irreps.dim, initial_irreps)
         else:
-            print(irreps_in.dim, irreps_in)
+            if verbose: print(irreps_in.dim, irreps_in)
             initial_irreps = irreps_in
         
         # prepare lmaxs for both encoder and decoder blocks
@@ -120,7 +121,7 @@ class H_VAE(torch.nn.Module):
 
 
             prev_irreps = encoder_cg_blocks[-1].irreps_out
-            print(prev_irreps.dim, prev_irreps)
+            if verbose: print(prev_irreps.dim, prev_irreps)
 
         self.encoder_cg_blocks = torch.nn.ModuleList(encoder_cg_blocks)
 
@@ -150,7 +151,7 @@ class H_VAE(torch.nn.Module):
             self.frame_learner = nn.SO3_linearity(frame_learner_irreps_in, frame_learner_irreps_out)
         
         latent_irreps = o3.Irreps('%dx0e+3x1e' % (self.latent_dim))
-        print(latent_irreps.dim, latent_irreps)
+        if verbose: print(latent_irreps.dim, latent_irreps)
 
         prev_dim = self.latent_dim
         if self.bottleneck_hidden_dims is not None and len(self.bottleneck_hidden_dims) > 0:
@@ -167,7 +168,7 @@ class H_VAE(torch.nn.Module):
 
         l1_frame_irreps = o3.Irreps('3x1e')
         self.first_decoder_projection = nn.SO3_linearity(l1_frame_irreps, o3.Irreps('%dx1e' % final_encoder_l1s)) # project back to space of irreps at the end of the encoder (l1 only)
-        print(prev_irreps.dim, prev_irreps)
+        if verbose: print(prev_irreps.dim, prev_irreps)
 
         ## decoder - cg
         decoder_cg_blocks = []
@@ -201,14 +202,14 @@ class H_VAE(torch.nn.Module):
                                                 init_scale=1.0))
 
             prev_irreps = temp_irreps_hidden
-            print(prev_irreps.dim, prev_irreps)
+            if verbose: print(prev_irreps.dim, prev_irreps)
 
         self.decoder_cg_blocks = torch.nn.ModuleList(decoder_cg_blocks)
 
         if self.do_initial_linear_projection: # final linear projection
             initial_irreps = (self.ch_initial_linear_projection*o3.Irreps.spherical_harmonics(max(irreps_in.ls), 1)).sort().irreps.simplify()
             self.final_linear_projection = nn.SO3_linearity(initial_irreps, irreps_in)
-            print(irreps_in.dim, irreps_in)
+            if verbose: print(irreps_in.dim, irreps_in)
 
         if self.do_final_signal_norm:
             self.final_signal_norm = torch.nn.Sequential(nn.signal_norm(irreps_in, normalization='component', affine=None))

@@ -95,8 +95,6 @@ class signal_norm(torch.nn.Module):
         else:
             self.balancing_constant = 1.0
         
-        print(self.balancing_constant)
-
         weights = {}
         if self.affine == 'unique':
             self.weight = torch.nn.parameter.Parameter(torch.ones(1))

@@ -1,7 +1,8 @@
 
-## Getting embeddings from a pre-trained model
+## Extracting H-(V)AE embeddings from a serries of PDBs
 
-Use the `get_embeddings.py` script to get embeddings from a pre-trained model. The script takes as input a file containing a list of protein sequences, and outputs a file containing the corresponding embeddings. The script can be run as follows:
+Use the `get_embeddings.py` script to get embeddings from a pre-trained model. The script takes as input a series of pdbs,
+and outputs invariant (L = 0) embeddings and equivariant (L = 1) frames. The script can be run as follows:
 
 ```
 usage: get_embeddings.py [-h] --model_dir MODEL_DIR --pdb_list PDB_LIST --pdb_dir PDB_DIR [--output_filename OUTPUT_FILENAME] [--batch_size BATCH_SIZE] [--pdb_processing {all_at_once,one_at_a_time}]
