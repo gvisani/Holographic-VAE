@@ -1,7 +1,7 @@
 
 ## Extracting H-(V)AE embeddings from a serries of PDBs
 
-*TODO: enable download of pre-trained model upon request.*
+*Automatic download of pre-trained models is not yet supported. Send us an email to get access to the pre-trained models from the paper.*
 
 Use the `get_embeddings.py` script to get embeddings from a pre-trained model.
 The script takes as input a series of pdbs, and outputs invariant (L = 0) embeddings and equivariant (L = 1) frames.
