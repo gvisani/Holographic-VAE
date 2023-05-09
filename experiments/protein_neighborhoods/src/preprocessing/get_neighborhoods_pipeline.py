@@ -1,14 +1,3 @@
-#
-# This file computes the atomic spherical coordinates in a given set of
-# neighborhoods and outputs a file with these coordinates.
-#
-# It takes as arguments:
-#  - The name of the ouput file
-#  - Name of central residue dataset
-#  - Number of threads
-#  - The neighborhood radius
-#  - "easy" flag to include central res
-#
 
 from turtle import back
 from get_neighborhoods import get_neighborhoods_from_protein, pad_neighborhoods
