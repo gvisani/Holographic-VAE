@@ -90,11 +90,14 @@ if __name__ == "__main__":
                         help='Whether to keep only backbone atoms. Set it to False for H-(V)AE neighborhoods.')
     parser.add_argument('--request_frame', type=str_to_bool, default=False,
                         help='Whether to request the backbone frame. Unused in our experiments.')
+    
+    parser.add_argument('--rst_normalization', type=optional_str, default='square', options=[None, 'None', 'square'],
+                        help='Normalization type per Dirac-Delta projection.')
 
     parser.add_argument('--channels', type=comma_sep_str_list, default=['C', 'N', 'O', 'S'],
-                        help='')
-    parser.add_argument('--get_psysicochemical_info_for_hydrogens', type=str_to_bool, default=False) # only applies if requesting SASA or charge
-    parser.add_argument('--rst_normalization', type=optional_str, default='square')
+                        help='Atomic and physicochemical channels to be included in the Zernikegrams. Can be any combination of [C, N, O, S, H, SASA, charge].')
+    parser.add_argument('--get_psysicochemical_info_for_hydrogens', type=str_to_bool, default=False,
+                        help='Whether to include physicochemical information for hydrogens. Only applies if requesting SASA or charge.')
 
     args = parser.parse_args()
 
