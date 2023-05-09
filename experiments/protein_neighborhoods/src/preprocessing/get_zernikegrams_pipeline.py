@@ -1,20 +1,9 @@
-#
-# This file computes the atomic spherical coordinates in a given set of
-# neighborhoods and outputs a file with these coordinates.
-#
-# It takes as arguments:
-#  - The name of the ouput file
-#  - Name of central residue dataset
-#  - Number of threads
-#  - The neighborhood radius
-#  - "easy" flag to include central res
-#
 
-# fix for the bug: RuntimeError: received 0 items of ancdata
-import resource
-rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
-print(rlimit)
-resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
+# # fix for the bug: RuntimeError: received 0 items of ancdata
+# import resource
+# rlimit = resource.getrlimit(resource.RLIMIT_NOFILE)
+# print(rlimit)
+# resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
 
 from experiments.protein_neighborhoods.src.preprocessing.preprocessor_neighborhoods import HDF5Preprocessor
 import numpy as np
@@ -75,28 +64,35 @@ def callback(nb, selected_masks, selected_weights, frame, rst, mul_rst, rst_norm
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--input_hdf5', type=str, required=True)
-    parser.add_argument('--output_hdf5', type=str, required=True)
+    parser.add_argument('--input_hdf5', type=str, required=True,
+                        help='Path to hdf5 file containing collected protein neighborhoods. Must be output to the script `get_neighborhoods_pipeline.py`')
+    parser.add_argument('--output_hdf5', type=str, required=True,
+                        help='User-defined name of output hdf5 file that will contain the zernikegrams.')
 
-    parser.add_argument('--input_dataset_name', type=str, default='data')
-    parser.add_argument('--output_dataset_name', type=str, default='data')
+    parser.add_argument('--input_dataset_name', type=str, default='data',
+                        help='Name of the dataset within input_hdf5 where the neighborhoods information is to be found. We recommend keeping this set to simply "data".')
+    parser.add_argument('--output_dataset_name', type=str, default='data',
+                        help='Name of the dataset within output_hdf5 where the zernikegram information will be saved. We recommend keeping this set to simply "data".')
     
-    parser.add_argument('--parallelism', type=int, default=4)
-
-    parser.add_argument('--projection', type=str, default='zernike', # --> repurpose this, currently unused anyway
-                        help='family of radial functions to use for projections')
+    parser.add_argument('--parallelism', type=int, default=1,
+                        help='Parallelism count for multiprocessing. Keep this set to 1, as the current version runs **slower** with multiprocessing.')
     
     parser.add_argument('--rmax', type=int, default=20,
-                        help='maximum radial order')
-    parser.add_argument('--rcut', type=float, default=10.0,
-                        help='max radius value to expect in point clouds') # 10 for Mike's casp12 data
-    parser.add_argument('--lmax', type=int, default=6,
-                        help='maximum spherical order')
+                        help='Maximum radial order.')
     
-    parser.add_argument('--backbone_only', type=str_to_bool, default=False)
-    parser.add_argument('--request_frame', type=str_to_bool, default=False)
+    parser.add_argument('--rcut', type=float, default=10.0,
+                        help='Radius of the neighborhoods. Alias of "radius".')
+    
+    parser.add_argument('--lmax', type=int, default=6,
+                        help='Maximum spherical order.')
+    
+    parser.add_argument('--backbone_only', type=str_to_bool, default=False,
+                        help='Whether to keep only backbone atoms. Set it to False for H-(V)AE neighborhoods.')
+    parser.add_argument('--request_frame', type=str_to_bool, default=False,
+                        help='Whether to request the backbone frame. Unused in our experiments.')
 
-    parser.add_argument('--channels', type=comma_sep_str_list, default=['C', 'N', 'O', 'S'])
+    parser.add_argument('--channels', type=comma_sep_str_list, default=['C', 'N', 'O', 'S'],
+                        help='')
     parser.add_argument('--get_psysicochemical_info_for_hydrogens', type=str_to_bool, default=False) # only applies if requesting SASA or charge
     parser.add_argument('--rst_normalization', type=optional_str, default='square')
 
