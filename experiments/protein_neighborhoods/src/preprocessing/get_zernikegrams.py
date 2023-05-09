@@ -61,8 +61,6 @@ def get_zernikegrams(nbs: np.ndarray, # of custom dtype
         frames = None
     labels = np.hstack(labels)
 
-    print(np.count_nonzero(np.isinf(zernikegrams)))
-
     return {'zernikegrams': zernikegrams,
             'data_ids': data_ids,
             'frames': frames,
@@ -86,11 +84,13 @@ def get_zernikegram_of_neighborhood(nb: np.ndarray,
     disentangled_coeffs = []
     for mask, weights in zip(selected_masks, selected_weights):
         # integration, with weights, of the fourier transform
+        all_selected_coeffs_masked = all_selected_coeffs[mask].float()
+
         if rst_normalization == 'square':
-            basesSelfDotsInv = 1.0 / torch.einsum('...f,...f->...', all_selected_coeffs[mask], all_selected_coeffs[mask])
-            coeffs = torch.einsum('...f,...,...->f', all_selected_coeffs[mask], basesSelfDotsInv, torch.tensor(weights))
+            basesSelfDotsInv = 1.0 / torch.einsum('...f,...f->...', all_selected_coeffs_masked, all_selected_coeffs_masked)
+            disentangled_coeffs.append(torch.einsum('...f,...,...->f', all_selected_coeffs_masked, basesSelfDotsInv, torch.tensor(weights).float()))
         elif rst_normalization is None:
-            disentangled_coeffs.append(torch.einsum('...f,...->f', all_selected_coeffs[mask], torch.tensor(weights)))
+            disentangled_coeffs.append(torch.einsum('...f,...->f', all_selected_coeffs_masked, torch.tensor(weights).float()))
         else:
             raise ValueError('Unknown rst_normalization: {}'.format(rst_normalization))
     

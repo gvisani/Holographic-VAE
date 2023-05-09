@@ -3,8 +3,10 @@ from functools import partial
 import numpy as np
 from sklearn.neighbors import KDTree
 
+from typing import *
 
-def get_neighborhoods(np_protein: np.array,
+
+def get_neighborhoods(proteins: np.ndarray,
                       r: float = 10.0,
                       remove_central_residue: bool = True,
                       backbone_only: bool = False,
@@ -15,21 +17,29 @@ def get_neighborhoods(np_protein: np.array,
     '''
 
     dt = np.dtype([
-        ('res_id','S6', (6)),
+        ('res_id','S50', (6)),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
-        ('res_ids', 'S6', (max_atoms, 6)),
-        ('coords', 'f8', (max_atoms, 3)),
-        ('SASAs', 'f8', (max_atoms)),
-        # ('RSAs', 'f8', (max_atoms)),
-        ('charges', 'f8', (max_atoms)),
+        ('res_ids', 'S50', (max_atoms, 6)),
+        ('coords', 'f4', (max_atoms, 3)),
+        ('SASAs', 'f4', (max_atoms)),
+        # ('RSAs', 'f4', (max_atoms)),
+        ('charges', 'f4', (max_atoms)),
     ])
-
-    nbs = get_padded_neighborhoods(np_protein, r=r, remove_central_residue=remove_central_residue, backbone_only=backbone_only, padded_length=max_atoms)
     
-    np_neighborhoods = np.zeros(shape=(len(nbs),), dtype=dt) 
-    for i, nb in enumerate(nbs):
-        np_neighborhoods[i] = (*nb,)
+    neighborhoods = []
+    num_nbs = 0
+    for np_protein in proteins:
+        nbs = get_padded_neighborhoods(np_protein, r=r, remove_central_residue=remove_central_residue, backbone_only=backbone_only, padded_length=max_atoms)
+        neighborhoods.append(nbs)
+        num_nbs += len(nbs)
+
+    np_neighborhoods = np.zeros(shape=(num_nbs,), dtype=dt)
+    i = 0
+    for nbs in neighborhoods:
+        for nb in nbs:
+            np_neighborhoods[i] = (*nb,)
+            i += 1
 
     return np_neighborhoods
 

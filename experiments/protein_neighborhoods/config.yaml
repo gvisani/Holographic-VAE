@@ -6,6 +6,7 @@ rcut: 10.0
 lmax: 6
 rmax: 20
 channels: ['C', 'N', 'O', 'S']
+backbone_only: False
 rst_normalization: 'square'
 collected_lmax: 6
 get_psysicochemical_info_for_hydrogens: False
@@ -14,9 +15,9 @@ normalize_input: true
 
 # model hparams
 model_hparams: 
-  latent_dim: 128
+  latent_dim: 256
   net_lmax: 6
-  ch_size_list: [60, 60, 60, 90, 128, 128]
+  ch_size_list: [64, 64, 64, 128, 256, 256]
   lmax_list: [6, 6, 6, 4, 2, 1]
   ls_nonlin_rule_list: ['efficient', 'efficient', 'efficient', 'efficient', 'efficient', 'efficient']
   ch_nonlin_rule_list: ['elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise']
@@ -41,8 +42,8 @@ model_hparams:
 
 
 # training hparams
-weight_decay: false
-n_epochs: 10
+weight_decay: true
+n_epochs: 8
 no_kl_epochs: 0
 warmup_kl_epochs: 0
 lr: 0.001

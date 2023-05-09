@@ -41,10 +41,14 @@ NOTE: ensure the new code on processing .pdb file works as expected
 def hvae_inference(experiment_dir: str,
                     output_filepath: Optional[str] = None,
                     data_filepath: Optional[str] = None,
+                    pdb_dir: Optional[str] = None,
                     input_dataset_name: Optional[str] = None, # only relevant is data_filepath is an hdf5 file
                     normalize_input_at_runtime: bool = True,
                     model_name: str = 'lowest_total_loss_with_final_kl_model',
-                    n_finetuning_epochs: int = 0):
+                    n_finetuning_epochs: int = 0,
+                    verbose: bool = False,
+                    loading_bar: bool = True,
+                    batch_size: int = 100):
 
     # get hparams from json
     with open(os.path.join(experiment_dir, 'hparams.json'), 'r') as f:
@@ -55,7 +59,7 @@ def hvae_inference(experiment_dir: str,
 
     # setup device
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print('Running on %s.' % (device))
+    if verbose: print('Running on %s.' % (device))
 
 
     ########## THE CODE BLOCK BELOW MAY BE CHANGED TO ACCOMODATE A DIFFERENT DATA-LOADING PIPELINE ##########
@@ -65,24 +69,37 @@ def hvae_inference(experiment_dir: str,
         output_filepath = os.path.join(experiment_dir, 'test_data_results-{}.npz'.format(model_name))
         datasets, data_irreps, _ = load_data(hparams, splits=['test'])
         test_dataset = datasets['test']
-        test_dataloader = DataLoader(test_dataset, batch_size=hparams['batch_size'], generator=rng, shuffle=False, drop_last=False)
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, generator=rng, shuffle=False, drop_last=False)
 
-    elif data_filepath[-4:] == '.pdb':
+    elif data_filepath[-4:] == '.pdb' or (data_filepath[-4:] == '.csv' and pdb_dir is not None):
 
         from holographic_vae.so3.functional import filter_by_l
 
-        protein = get_structural_info(data_filepath)[0]
-        nbs = get_neighborhoods(protein, remove_central_residue = True, backbone_only = False)
+        if data_filepath[-4:] == '.pdb': # --> single pdb is provided
+            protein = get_structural_info(data_filepath)
+            nbs = get_neighborhoods(protein, remove_central_residue = False, backbone_only = False)
+
+        else: # (data_filepath[-4:] == '.csv' and pdb_dir is not None) --> list of pdbs is provided
+            pdb_list = pd.read_csv(data_filepath)['pdb'].tolist()
+            if verbose: print('Collecting neighborhoods from %d PDB files...' % len(pdb_list))
+            sys.stdout.flush()
+            
+            proteins = get_structural_info([os.path.join(pdb_dir, pdb+'.pdb') for pdb in pdb_list])
+            nbs = get_neighborhoods(proteins, remove_central_residue = False, backbone_only = False)
 
         orig_OnRadialFunctions = ZernickeRadialFunctions(hparams['rcut'], hparams['rmax']+1, hparams['collected_lmax'], complex_sph = False)
         orig_rst = RadialSphericalTensor(hparams['rmax']+1, orig_OnRadialFunctions, hparams['collected_lmax'], 1, 1)
         orig_mul_rst = MultiChannelRadialSphericalTensor(orig_rst, len(hparams['channels']))
         orig_data_irreps = o3.Irreps(str(orig_mul_rst))
 
-        zgrams_data = get_zernikegrams(nbs, hparams['rcut'], hparams['rmax'], hparams['collected_lmax'], hparams['channels'], backbone_only=hparams['backbone_only'], request_frame=False, get_psysicochemical_info_for_hydrogens=hparams['get_psysicochemical_info_for_hydrogens'])
+        if verbose: print('Generating zernikegrams...')
+        sys.stdout.flush()
+        zgrams_data = get_zernikegrams(nbs, hparams['rcut'], hparams['rmax'], hparams['collected_lmax'], hparams['channels'], backbone_only=hparams['backbone_only'], request_frame=False, get_psysicochemical_info_for_hydrogens=hparams['get_psysicochemical_info_for_hydrogens'], rst_normalization=hparams['rst_normalization'])
 
         if hparams['lmax'] != hparams['collected_lmax']: # this slicing is only relevant when using rst_normalization == 'square'. We recommend keeping 'collected_lmax' and 'lmax' the same.
-            zgrams_data['zernikegrams'] = filter_by_l(zgrams_data['zernikegrams'], orig_data_irreps, hparams['lmax']).float()
+            zgrams_data['zernikegrams'] = filter_by_l(torch.tensor(zgrams_data['zernikegrams']), orig_data_irreps, hparams['lmax']).float()
+        else:
+            zgrams_data['zernikegrams'] = torch.tensor(zgrams_data['zernikegrams']).float()
         
         # requested data irreps
         # note: no need to filter by channel since the zernikegrams are being computed on-the-fly with the requsted channels, instead of having been pre-collected.
@@ -101,13 +118,12 @@ def hvae_inference(experiment_dir: str,
             return '_'.join(list(map(lambda x: x.decode('utf-8'), list(data_id))))
     
         if zgrams_data['frames'] is None:
-            zgrams_data['frames'] = np.zeros((test_labels.shape[0], 3, 3))
+            zgrams_data['frames'] = np.zeros((zgrams_data['labels'].shape[0], 3, 3))
 
-        test_dataset = NeighborhoodsDataset(torch.tensor(zgrams_data['zernikegrams']), data_irreps, torch.tensor(zgrams_data['labels']), list(zip(list(zgrams_data['frames']), list(map(stringify, zgrams_data['data_ids'])))))
-        test_dataloader = DataLoader(test_dataset, batch_size=hparams['batch_size'], generator=rng, shuffle=False, drop_last=False)
+        if verbose: print('Power: %.4f' % (torch.mean(torch.sqrt(torch.einsum('bf,bf,f->b', zgrams_data['zernikegrams'][:1000], zgrams_data['zernikegrams'][:1000], 1.0 / (2*ls_indices + 1)))).item()))
 
-        if output_filepath is None:
-            raise TypeError("'output_filepath' cannot be None if input is pdb file.")
+        test_dataset = NeighborhoodsDataset(zgrams_data['zernikegrams'], data_irreps, torch.tensor(zgrams_data['labels']), list(zip(list(zgrams_data['frames']), list(map(stringify, zgrams_data['data_ids'])))))
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, generator=rng, shuffle=False, drop_last=False)
 
     elif data_filepath[-5:] == '.hdf5': # inference with hdf5 file using standard naming of variables
 
@@ -186,16 +202,17 @@ def hvae_inference(experiment_dir: str,
             normalize_input_at_runtime = False
         
         test_dataset = NeighborhoodsDataset(torch.tensor(test_data), data_irreps, torch.tensor(test_labels), list(zip(list(test_frames), list(test_ids))))
-        test_dataloader = DataLoader(test_dataset, batch_size=hparams['batch_size'], generator=rng, shuffle=False, drop_last=False)
-
-        if output_filepath is None:
-            raise TypeError("'output_filepath' cannot be None if input is pdb file.")
+        test_dataloader = DataLoader(test_dataset, batch_size=batch_size, generator=rng, shuffle=False, drop_last=False)
 
     else:
         raise NotImplementedError()
     
+    if verbose: print('Done preprocessing.')
+    sys.stdout.flush()
+    
     ########## THIS CODE BLOCK ABOVE MAY BE CHANGED TO ACCOMODATE A DIFFERENT DATA-LOADING PIPELINE ##########
-    print('Data Irreps: %s' % (str(data_irreps)))
+
+    if verbose: print('Data Irreps: %s' % (str(data_irreps)))
     sys.stdout.flush()
 
 
@@ -211,26 +228,31 @@ def hvae_inference(experiment_dir: str,
     
     # create model and load weights
     model = H_VAE(data_irreps, w3j_matrices, hparams['model_hparams'], device, normalize_input_at_runtime=normalize_input_at_runtime).to(device)
-    
     model.load_state_dict(torch.load(os.path.join(experiment_dir, model_name + '.pt'), map_location=torch.device(device)))
 
     num_params = 0
     for param in model.parameters():
         num_params += torch.flatten(param.data).shape[0]
-    print('There are %d parameters' % (num_params))
+    if verbose: print('There are %d parameters' % (num_params))
     sys.stdout.flush()
 
     if n_finetuning_epochs > 0:
-        print('Fine-tuning model for %d epochs' % (n_finetuning_epochs))
+        if verbose: print('Fine-tuning model for %d epochs' % (n_finetuning_epochs))
         model = finetune(model, hparams, n_finetuning_epochs, test_dataloader, device)
 
     model.eval()
     invariants, labels, learned_frames, images, rec_images, data_ids = [], [], [], [], [], []
-    for i, (X, X_rec, y, (rot, data_id)) in tqdm(enumerate(test_dataloader)):
+    
+    if loading_bar:
+        loadind_bar = tqdm
+    else:
+        loadind_bar = lambda x: x
+
+    for i, (X, X_vec, y, (rot, data_id)) in loadind_bar(enumerate(test_dataloader)):
         X = put_dict_on_device(X, device)
         rot = rot.view(-1, 3, 3).float().to(device)
 
-        (z_mean, z_log_var), learned_frame = model.encode(X)
+        (z_mean, _), learned_frame = model.encode(X)
 
         z = z_mean
 
@@ -247,7 +269,7 @@ def hvae_inference(experiment_dir: str,
             learned_frames.append(rot.reshape(-1, 1, 9).squeeze(1).cpu().numpy())
         
         labels.append(y.cpu().numpy())
-        images.append(make_vec(X).detach().cpu().numpy())
+        images.append(X_vec.detach().cpu().numpy())
         rec_images.append(make_vec(x_reconst).detach().cpu().numpy())
         data_ids.append(data_id)
         
@@ -259,15 +281,18 @@ def hvae_inference(experiment_dir: str,
     rec_images_NF = np.vstack(rec_images)
     
     cosine_loss_fn = eval(NAME_TO_LOSS_FN['cosine'])(data_irreps, device)
-    cosine_loss = cosine_loss_fn(torch.tensor(images_NF).float().to(device), torch.tensor(rec_images_NF).float().to(device))
-    mse_loss = torch.nn.functional.mse_loss(torch.tensor(images_NF).float().to(device), torch.tensor(rec_images_NF).float().to(device))
-    print('Cosine loss: {:.3f}'.format(cosine_loss.item()))
-    print('MSE loss: {:.8f}'.format(mse_loss.item()))
+    cosine_loss = cosine_loss_fn(torch.tensor(images_NF).float().to(device), torch.tensor(rec_images_NF).float().to(device)).item()
+    mse_loss = torch.nn.functional.mse_loss(torch.tensor(images_NF).float().to(device), torch.tensor(rec_images_NF).float().to(device)).item()
+    if verbose: print('Cosine loss: {:.3f}'.format(cosine_loss))
+    # if verbose: print('MSE loss: {:.8f}'.format(mse_loss))
 
-    print('Done running model, saving to %s ...' % (output_filepath))
+    if verbose: print('Done running model, saving to %s ...' % (output_filepath))
     sys.stdout.flush()
+
+    if output_filepath is None: # then return everything
+        return invariants_ND, learned_frames_N9, labels_N, data_ids_N, images_NF, rec_images_NF, cosine_loss
     
-    if output_filepath[-4:] == '.npz':
+    elif output_filepath[-4:] == '.npz':
         np.savez(output_filepath,
                         invariants_ND = invariants_ND,
                         learned_frames_N9 = learned_frames_N9,
@@ -278,12 +303,12 @@ def hvae_inference(experiment_dir: str,
     elif output_filepath[-5:] == '.hdf5':
 
         dt = np.dtype([
-            ('res_id','S6', (6)), # S5, 5 (old) ; S6, 6 (new with 2ndary structure)
-            ('invariant', 'f8', (invariants_ND.shape[1])),
-            ('learned_frame', 'f8', (3, 3)),
+            ('res_id','S50', (6)),
+            ('invariant', 'f4', (invariants_ND.shape[1])),
+            ('learned_frame', 'f4', (3, 3)),
             ('label', 'i4', (1)),
-            ('original_zgram', 'f8', (images_NF.shape[1])),
-            ('reconstructed_zgram', 'f8', (rec_images_NF.shape[1]))
+            ('original_zgram', 'f4', (images_NF.shape[1])),
+            ('reconstructed_zgram', 'f4', (rec_images_NF.shape[1]))
         ])
 
         def unstringify(stringified):
@@ -305,11 +330,11 @@ def hvae_inference(experiment_dir: str,
                     for dataset_name in f_in.keys():
                         if dataset_name != input_dataset_name:
                             f_in.copy(f_in[dataset_name], f)
-
+    
     else:
         raise NotImplementedError()
 
-    print('Done saving')
+    if verbose: print('Done saving')
     sys.stdout.flush()
 
 

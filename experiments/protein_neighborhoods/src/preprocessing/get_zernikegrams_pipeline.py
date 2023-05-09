@@ -44,13 +44,13 @@ def callback(nb, selected_masks, selected_weights, frame, rst, mul_rst, rst_norm
         disentangled_coeffs = []
         for mask, weights in zip(selected_masks, selected_weights):
             # integration, with weights, of the fourier transform
-            all_selected_coeffs_masked = all_selected_coeffs[mask]
+            all_selected_coeffs_masked = all_selected_coeffs[mask].float()
             
             if rst_normalization == 'square':
                 basesSelfDotsInv = 1.0 / torch.einsum('...f,...f->...', all_selected_coeffs_masked, all_selected_coeffs_masked)
-                disentangled_coeffs.append(torch.einsum('...f,...,...->f', all_selected_coeffs_masked, basesSelfDotsInv, torch.tensor(weights)))
+                disentangled_coeffs.append(torch.einsum('...f,...,...->f', all_selected_coeffs_masked, basesSelfDotsInv, torch.tensor(weights).float()))
             elif rst_normalization is None:
-                disentangled_coeffs.append(torch.einsum('...f,...->f', all_selected_coeffs_masked, torch.tensor(weights)))
+                disentangled_coeffs.append(torch.einsum('...f,...->f', all_selected_coeffs_masked, torch.tensor(weights).float()))
             else:
                 raise ValueError('Unknown rst_normalization: {}'.format(rst_normalization))
         
@@ -97,8 +97,8 @@ if __name__ == "__main__":
     parser.add_argument('--request_frame', type=str_to_bool, default=False)
 
     parser.add_argument('--channels', type=comma_sep_str_list, default=['C', 'N', 'O', 'S'])
-    parser.add_argument('--get_psysicochemical_info_for_hydrogens', type=str_to_bool, default=True) # only applies if requesting SASA or charge
-    parser.add_argument('--rst_normalization', type=optional_str, default=None)
+    parser.add_argument('--get_psysicochemical_info_for_hydrogens', type=str_to_bool, default=False) # only applies if requesting SASA or charge
+    parser.add_argument('--rst_normalization', type=optional_str, default='square')
 
     args = parser.parse_args()
 

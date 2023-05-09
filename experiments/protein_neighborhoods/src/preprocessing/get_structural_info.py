@@ -1,6 +1,6 @@
 """Module for extracting structural info from pyrosetta pose"""
 
-import sys
+import os, sys
 
 from functools import partial
 from pathlib import Path
@@ -12,6 +12,8 @@ import numpy as np
 ## LOCAL ABSOLUTE PYROSETTA PATH
 sys.path.append('/gscratch/spe/gvisan01/PyRosetta4.Release.python39.linux.release-335')
 
+os.environ['PYROSETTA_COPYRIGHT_NOTICE'] = ''
+
 import pyrosetta
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
 from pyrosetta.rosetta.core.pose import Pose
@@ -22,34 +24,41 @@ from pyrosetta.rosetta.core.scoring.hbonds import HBondSet
 from pyrosetta.rosetta.protocols.moves import DsspMover
 from pyrosetta.rosetta.utility import vector1_double
 
+from typing import *
 
-def get_structural_info(pdb_filepath: str,
+
+def get_structural_info(pdb_filepath: Union[str, List[str]],
                         max_atoms: int = 200000
                         ) -> np.array:
     '''
-    Get structural info from pdb file using pyrosetta
+    Get structural info from either a single pdb file, or a list of pdbs, using pyrosetta.
     '''
 
     # init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -ignore_waters 1'
-    init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -ignore_zero_occupancy false -obey_ENDMDL 1'
-    pyrosetta.init(init_flags)
-    pose = pyrosetta.pose_from_pdb(pdb_filepath)
-
+    init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -include_sugars -ignore_zero_occupancy false -obey_ENDMDL 1'
+    pyrosetta.init(init_flags, silent=True)
 
     dt = np.dtype([
-            ('pdb','S4',()),
+            ('pdb','S50',()),
             ('atom_names', 'S4', (max_atoms)),
             ('elements', 'S1', (max_atoms)),
-            ('res_ids', 'S6', (max_atoms, 6)),
-            ('coords', 'f8', (max_atoms, 3)),
-            ('SASAs', 'f8', (max_atoms)),
-            # ('RSAs', 'f8', (max_atoms)),
-            ('charges', 'f8', (max_atoms)),
+            ('res_ids', 'S50', (max_atoms, 6)),
+            ('coords', 'f4', (max_atoms, 3)),
+            ('SASAs', 'f4', (max_atoms)),
+            # ('RSAs', 'f4', (max_atoms)),
+            ('charges', 'f4', (max_atoms)),
         ])
-    np_protein = np.zeros(shape=(1),dtype=dt) 
 
-    si = get_padded_structural_info(pose, padded_length=max_atoms)
-    np_protein[0] = (*si,)
+    if isinstance(pdb_filepath, str):
+        pdb_filepath = [pdb_filepath]
+    
+    np_protein = np.zeros(shape=(len(pdb_filepath)), dtype=dt) 
+
+    for i, pdb_file in enumerate(pdb_filepath):
+        pose = pyrosetta.pose_from_pdb(pdb_file)
+
+        si = get_padded_structural_info(pose, padded_length=max_atoms)
+        np_protein[i] = (*si,)
 
     return np_protein
 

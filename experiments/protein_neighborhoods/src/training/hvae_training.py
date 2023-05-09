@@ -44,7 +44,7 @@ def hvae_training(experiment_dir: str):
     ########## THE CODE BLOCK BELOW MAY BE CHANGED TO ACCOMODATE A DIFFERENT DATA-LOADING PIPELINE ##########
 
     # get data and make dataloaders
-    from protein_holography_pytorch.utils.data import load_data
+    from experiments.protein_neighborhoods.src.utils.data import load_data
     datasets, data_irreps, norm_factor = load_data(hparams, splits=['train', 'valid'])
     train_dataset, valid_dataset = datasets['train'], datasets['valid']
     train_dataloader = DataLoader(train_dataset, batch_size=hparams['batch_size'], generator=rng, shuffle=True, drop_last=False)

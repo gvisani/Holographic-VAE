@@ -106,13 +106,13 @@ if __name__ == "__main__":
 
     n_not_proteinnet = 0
     dt = np.dtype([
-        ('res_id','S6', (6)), # S5, 5 (old) ; S6, 6 (new with 2ndary structure)
+        ('res_id','S50', (6)),
         ('atom_names', 'S4', (MAX_ATOMS)),
         ('elements', 'S1', (MAX_ATOMS)),
-        ('res_ids', 'S6', (MAX_ATOMS, 6)), # S5, 5 (old) ; S6, 6 (new with 2ndary structure)
-        ('coords', 'f8', (MAX_ATOMS, 3)),
-        ('SASAs', 'f8', (MAX_ATOMS)),
-        ('charges', 'f8', (MAX_ATOMS)),
+        ('res_ids', 'S50', (MAX_ATOMS, 6)),
+        ('coords', 'f4', (MAX_ATOMS, 3)),
+        ('SASAs', 'f4', (MAX_ATOMS)),
+        ('charges', 'f4', (MAX_ATOMS)),
     ])
     print(dt)
     print('writing hdf5 file')

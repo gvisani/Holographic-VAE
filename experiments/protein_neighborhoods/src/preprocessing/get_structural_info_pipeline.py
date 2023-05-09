@@ -73,10 +73,10 @@ if __name__ == "__main__":
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
         ('res_ids', 'S6', (max_atoms, 6)),
-        ('coords', 'f8', (max_atoms, 3)),
-        ('SASAs', 'f8', (max_atoms)),
-        # ('RSAs', 'f8', (max_atoms)),
-        ('charges', 'f8', (max_atoms)),
+        ('coords', 'f4', (max_atoms, 3)),
+        ('SASAs', 'f4', (max_atoms)),
+        # ('RSAs', 'f4', (max_atoms)),
+        ('charges', 'f4', (max_atoms)),
     ])
     with h5py.File(args.hdf5_out,'w') as f:
         f.create_dataset(args.dataset_name,
