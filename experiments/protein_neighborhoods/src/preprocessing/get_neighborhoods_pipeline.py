@@ -25,13 +25,16 @@ from protein_holography_pytorch.utils.argparse import *
 MAX_ATOMS = 1000
 ALL_AAs = ['R', 'H', 'K', 'D', 'E', 'S', 'T', 'N', 'Q', 'C', 'U', 'G', 'P', 'A', 'I', 'L', 'M', 'F', 'W', 'Y', 'V']
 
+# Modify the two paths below with your local paths, if you have downloaded proteinnet.
+PROTEINNET_VALIDATION_CHAINS = '/gscratch/scrubbed/mpun/test/casp12/validation'
+PROTEINNET_TRAINING_CHAINS = '/gscratch/scrubbed/mpun/test/casp12/training_30'
 
 def get_proteinnet__pdb_chain_pairs(testing=False):
     if testing:
-        f = open('/gscratch/scrubbed/mpun/test/casp12/validation')
+        f = open(PROTEINNET_VALIDATION_CHAINS)
         print('Using ProteinNet validation chains.')
     else:
-        f = open('/gscratch/scrubbed/mpun/test/casp12/training_30')
+        f = open(PROTEINNET_TRAINING_CHAINS)
         print('Using ProteinNet training_30 chains.')
     lines = f.readlines()
     f.close()
@@ -73,16 +76,25 @@ def callback(np_protein, r, remove_central_residue, backbone_only):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--input_hdf5', type=str, required=True)
-    parser.add_argument('--output_hdf5', type=str, required=True)
-    parser.add_argument('--input_dataset_name', type=str, default='data')
-    parser.add_argument('--output_dataset_name', type=str, default='data')
-    parser.add_argument('--parallelism', type=int, default=40)
-    parser.add_argument('--radius', type=float, default=10.0)
-    parser.add_argument('--remove_central_residue', type=str_to_bool, default=False)
-    parser.add_argument('--backbone_only', type=str_to_bool, default=False)
+    parser.add_argument('--input_hdf5', type=str, required=True,
+                        help='Path to hdf5 file containing protein 3D structure information. Must be output to the script `get_structural_info_pipeline.py`')
+    parser.add_argument('--output_hdf5', type=str, required=True,
+                        help='User-defined name of output hdf5 file that will contain the extracted neighborhoods.')
+    parser.add_argument('--input_dataset_name', type=str, default='data',
+                        help='Name of the dataset within input_hdf5 where the structural information is to be found. We recommend keeping this set to simply "data".')
+    parser.add_argument('--output_dataset_name', type=str, default='data',
+                        help='Name of the dataset within output_hdf5 where the neighborhoods information will be saved. We recommend keeping this set to simply "data".')
+    parser.add_argument('--parallelism', type=int, default=1,
+                        help='Parallelis count for multiprocessing')
+    parser.add_argument('--radius', type=float, default=10.0,
+                        help='Radius of the neighborhoods. Alias of "rcut".')
+    parser.add_argument('--remove_central_residue', type=str_to_bool, default=False,
+                        help='Whether to remove the central residue. Set it to False for H-(V)AE neighborhoods.')
+    parser.add_argument('--backbone_only', type=str_to_bool, default=False,
+                        help='Whether to keep only backbone atoms. Set it to False for H-(V)AE neighborhoods.')
     parser.add_argument('--filter_out_chains_not_in_proteinnet', type=str_to_bool, default=False,
-                        help='Whether to exclude neighborhoods that appear in casp12 proteinnet.')
+                        help='Whether to exclude neighborhoods that do not appear in casp12 proteinnet, as only some chains within the provided PDBs are in proteinnet. \
+                              Set to True in our experiments on CASP 12, but it requires access to the proteinnet data.')
     parser.add_argument('--AAs', type=str, default='all',
                         help='List of amino-acid types to collect. Either "all" or provided in comma-separated form.')
     
