@@ -105,7 +105,7 @@ def hvae_training(experiment_dir: str):
         lr_list = None
     
     elif hparams['lr_scheduler'] == 'reduce_lr_on_plateau':
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.2, patience=5, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=True)
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer_all, mode='min', factor=0.2, patience=5, threshold=0.0001, threshold_mode='rel', cooldown=0, min_lr=0, eps=1e-08, verbose=True)
         lr_list = None
 
     elif hparams['lr_scheduler'] == 'log_decrease_until_end_of_warmup':

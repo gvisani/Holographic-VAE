@@ -19,7 +19,7 @@ if __name__ == '__main__':
                         help='Directory containing the trained model.')
 
     parser.add_argument('--pdb_list', type=str, required=True,
-                        help='csv file containing list of PDB files of interest.')
+                        help='csv file containing list of PDB files of interest, under the column "pdb".')
     parser.add_argument('--pdb_dir', type=str, required=True,
                         help='Directory containing PDB files.')
     

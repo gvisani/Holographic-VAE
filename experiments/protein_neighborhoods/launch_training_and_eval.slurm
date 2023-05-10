@@ -13,4 +13,4 @@
 #SBATCH -e slurm_logs/hae-z=256=lmax=6-collected_lmax=6-rst_norm=square.err
 #SBATCH -o slurm_logs/hae-z=256=lmax=6-collected_lmax=6-rst_norm=square.out
 
-python launch_training_and_eval.py --model_id hae-z=256=lmax=6-collected_lmax=6-rst_norm=square --training_config config.yaml
+python train_and_eval.py --model_dir runs/hae-z=256=lmax=6-collected_lmax=6-rst_norm=square --training_config config.yaml

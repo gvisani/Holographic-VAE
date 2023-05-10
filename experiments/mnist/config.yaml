@@ -1,0 +1,55 @@
+
+
+# data hparams
+data_filepath: './data/real_sph_mnist%s-b=%d-lmax=%d-normalize=%s-quad_weights=%s.gz'
+bw: 30
+cz: 10
+normalize: 'avg_sqrt_power'
+quad_weights: true
+lmax: 10
+input_type: NRR
+
+
+# model hparams
+model_hparams:
+  is_vae: true
+  latent_dim: 16
+  net_lmax: 10
+  ch_size_list: [16, 16, 16, 16, 16, 16]
+  lmax_list: [10, 10, 8, 4, 2, 1]
+  ls_nonlin_rule_list: ['efficient', 'efficient', 'efficient', 'efficient', 'efficient', 'efficient']
+  ch_nonlin_rule_list: ['elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise']
+  do_initial_linear_projection: false
+  ch_initial_linear_projection: 0
+  use_additive_skip_connections: true
+  use_batch_norm: true
+  norm_type: 'signal'
+  norm_location: 'between'
+  normalization: 'component'
+  norm_affine: 'per_l'
+  linearity_first: false
+  learn_frame: true
+  norm_nonlinearity: null
+  norm_balanced: false
+  bottleneck_hidden_dims: null
+  weights_initializer: null
+  filter_symmetric: true
+  x_rec_loss_fn: 'mse'
+  do_final_signal_norm: false
+  input_normalizing_constant: 1.0
+
+
+# training hparams
+weight_decay: false
+n_epochs: 80
+no_kl_epochs: 25
+warmup_kl_epochs: 35
+lr: 0.001
+lr_scheduler: 'log_decrease_until_end_of_warmup' # 'reduce_lr_on_plateau'
+batch_size: 100
+lambdas: [50.0, 0.2]
+lambdas_schedule: 'linear_up_anneal_kl' # 'constant'
+
+
+# rng seed
+seed: 123456789

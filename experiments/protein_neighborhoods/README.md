@@ -46,6 +46,3 @@ the protein neighborhoods in the PDBs.
     --eval_only           If toggled, then only perform inference and evaluation on the standard test data.
 ```
 
-
-
-## 

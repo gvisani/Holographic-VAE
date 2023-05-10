@@ -8,6 +8,36 @@ from e3nn import o3
 
 from typing import *
 
+def get_random_wigner_D(lmax: int):
+    rot_matrix = o3.rand_matrix()
+    alpha, beta, gamma = o3.matrix_to_angles(rot_matrix)
+    wigner = {}
+    for l in range(lmax + 1):
+        wigner[l] = o3.wigner_D(l, alpha, beta, gamma)
+    return wigner
+
+def get_wigner_D_from_rot_matrix(lmax: int, rot_matrix: Tensor):
+    alpha, beta, gamma = o3.matrix_to_angles(rot_matrix)
+    wigner = {}
+    for l in range(lmax + 1):
+        wigner[l] = o3.wigner_D(l, alpha, beta, gamma)
+    return wigner
+
+def get_wigner_D_from_alpha_beta_gamma(lmax: int, alpha: Tensor, beta: Tensor, gamma: Tensor):
+    wigner = {}
+    for l in range(lmax + 1):
+        wigner[l] = o3.wigner_D(l, alpha, beta, gamma)
+    return wigner
+
+def rotate_signal(signal: Tensor, irreps: o3.Irreps, wigner: Dict):
+    '''
+    wigner must contain wigner-D matrices for all l's in irreps, otherwise a KeyError will be thrown
+    '''
+    wigner_ls = [wigner[l] for l in irreps.ls]
+    rot_mat = torch.block_diag(*wigner_ls)
+    rotated_signal = torch.matmul(signal, torch.t(rot_mat)) # Compute R = S * W^T --> 
+    return rotated_signal
+
 
 def get_vectors_at_l(signal: Tensor, irreps: o3.Irreps, l: int):
     ls_indices = torch.cat([torch.tensor(irreps.ls)[torch.tensor(irreps.ls) == l].repeat(2*l+1) for l in sorted(list(set(irreps.ls)))])
