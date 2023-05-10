@@ -91,7 +91,7 @@ if __name__ == "__main__":
     parser.add_argument('--request_frame', type=str_to_bool, default=False,
                         help='Whether to request the backbone frame. Unused in our experiments.')
     
-    parser.add_argument('--rst_normalization', type=optional_str, default='square', options=[None, 'None', 'square'],
+    parser.add_argument('--rst_normalization', type=optional_str, default='square', choices=[None, 'None', 'square'],
                         help='Normalization type per Dirac-Delta projection.')
 
     parser.add_argument('--channels', type=comma_sep_str_list, default=['C', 'N', 'O', 'S'],

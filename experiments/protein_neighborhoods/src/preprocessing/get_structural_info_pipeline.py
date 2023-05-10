@@ -5,9 +5,9 @@ from get_structural_info import get_structural_info_from_protein, pad_structural
 from preprocessor_pdbs import PDBPreprocessor
 from argparse import ArgumentParser
 import numpy as np
+import pandas as pd
 import h5py
 import sys
-import logging
 from progress.bar import Bar
 
 def callback(pose):
@@ -32,27 +32,24 @@ def callback(pose):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('--hdf5_out', dest='hdf5_out', type=str,
-                        help='Output hdf5 filename')
+    parser.add_argument('--output_hdf5', type=str, required=True,
+                        help='User-defined name of output hdf5 file that will contain the per-pdb structural information.')
 
-    parser.add_argument('--dataset_name', dest='dataset_name', type=str, default='data',
-                        help='Chosen name of dataset within hdf5_out. I put just some dummy name')
+    parser.add_argument('--output_dataset_name', type=str, default='data',
+                        help='Name of the dataset within output_hdf5 where the structural information will be saved. We recommend keeping this set to simply "data".')
+    
+    parser.add_argument('--parallelism', type=int, default=1,
+                        help='Parallelism for multiprocessing.')
 
-    parser.add_argument('--parallelism', dest='parallelism', type=int, default=4,
-                        help='How many processed to run in parallel (make it equal to number of tasks requested in hyak)')
+    parser.add_argument('--pdb_list', type=str, required=True,
+                        help='csv file containing list of PDB files of interest, under the column "pdb".')
 
-    parser.add_argument('--pdb_filepath', dest='pdb_filepath', type=str, default=None,
-                        help='path to a .txt file containing pdbs to collect, one per line')
-
-    parser.add_argument('--pdb_dir', dest='pdb_dir', type=str, default=None,
-                        help='directory of pdb files')
+    parser.add_argument('--pdb_dir', type=str, required=True,
+                        help='Directory containing PDB files.')
     
     args = parser.parse_args()
 
-    pdb_list = []
-    with open(args.pdb_filepath) as f:
-        for line in f:
-            pdb_list.append(line.strip())
+    pdb_list = list(pd.read_csv(args.pdb_list)['pdb'])
 
     pdb_list_from_dir = []
     for file in os.listdir(args.pdb_dir):
@@ -74,16 +71,15 @@ if __name__ == "__main__":
         ('elements', 'S1', (max_atoms)),
         ('res_ids', 'S6', (max_atoms, 6)),
         ('coords', 'f4', (max_atoms, 3)),
-        ('SASAs', 'f4', (max_atoms)),
-        # ('RSAs', 'f4', (max_atoms)),
-        ('charges', 'f4', (max_atoms)),
+        ('SASAs', 'f4', (max_atoms)), # unused in H-(V)AE
+        ('charges', 'f4', (max_atoms)), # unused in H-(V)AE
     ])
-    with h5py.File(args.hdf5_out,'w') as f:
-        f.create_dataset(args.dataset_name,
+    with h5py.File(args.output_hdf5,'w') as f:
+        f.create_dataset(args.output_dataset_name,
                          shape=(ds.size,),
                          dtype=dt)
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
-        with h5py.File(args.hdf5_out,'r+') as f:
+        with h5py.File(args.output_hdf5,'r+') as f:
             for i,structural_info in enumerate(ds.execute(
                     callback,
                     limit = None,
@@ -98,7 +94,7 @@ if __name__ == "__main__":
                 #print(max_atoms - np.sum(atom_names == b''),'atoms in array')
                 #print('wrting to hdf5')
                 try:
-                    f[args.dataset_name][i] = (pdb,atom_names,elements,res_ids,coords,sasas,charges) # ,sasas,rsas,charges)
+                    f[args.output_dataset_name][i] = (pdb,atom_names,elements,res_ids,coords,sasas,charges) # ,sasas,rsas,charges)
                     #print('success')
                 except Exception as e:
                     print(e)

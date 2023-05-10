@@ -12,8 +12,6 @@ import numpy as np
 ## LOCAL ABSOLUTE PYROSETTA PATH
 sys.path.append('/gscratch/spe/gvisan01/PyRosetta4.Release.python39.linux.release-335')
 
-os.environ['PYROSETTA_COPYRIGHT_NOTICE'] = ''
-
 import pyrosetta
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
 from pyrosetta.rosetta.core.pose import Pose

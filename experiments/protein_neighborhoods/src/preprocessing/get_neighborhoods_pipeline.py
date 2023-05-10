@@ -9,7 +9,7 @@ import sys
 import logging
 from progress.bar import Bar
 import traceback
-from protein_holography_pytorch.utils.argparse import *
+from holographic_vae.utils.argparse import *
 
 MAX_ATOMS = 1000
 ALL_AAs = ['R', 'H', 'K', 'D', 'E', 'S', 'T', 'N', 'Q', 'C', 'U', 'G', 'P', 'A', 'I', 'L', 'M', 'F', 'W', 'Y', 'V']
