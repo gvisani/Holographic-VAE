@@ -9,9 +9,6 @@ from typing import List,Tuple
 import h5py
 import numpy as np
 
-## LOCAL ABSOLUTE PYROSETTA PATH
-sys.path.append('/gscratch/spe/gvisan01/PyRosetta4.Release.python39.linux.release-335')
-
 import pyrosetta
 from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
 from pyrosetta.rosetta.core.pose import Pose

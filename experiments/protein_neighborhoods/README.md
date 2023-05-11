@@ -1,5 +1,10 @@
 
-## Extracting H-(V)AE embeddings from a serries of PDBs
+## On the current necessity of pyrosetta
+
+Currently, our code is dependent on pyrosetta which can be downloaded from [here](https://www.pyrosetta.org/downloads#h.6vttn15ac69d). A license is available at no cost to academics and can be obtained [here](https://www.pyrosetta.org/home/licensing-pyrosetta). However, the use of pyrosetta can be bypassed by users if they write a custom script that parses PDB files; see the README in the `preprocessing` folder for more details. We plan on releasing a script using an alternative PDB parser soon.
+
+
+## Extracting H-(V)AE embeddings from a series of PDBs
 
 *Automatic download of pre-trained models is not yet supported. Send us an email to get access to the pre-trained models from the paper.*
 
