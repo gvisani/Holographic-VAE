@@ -14,3 +14,5 @@
 *.txt
 *.pdb
 *.slurm
+*ubyte
+*.mdb

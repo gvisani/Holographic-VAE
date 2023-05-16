@@ -4,3 +4,4 @@ from .nonlinearity import *
 from .normalization import *
 from .tensor_product import *
 from .activations import *
+from .encoding import *
