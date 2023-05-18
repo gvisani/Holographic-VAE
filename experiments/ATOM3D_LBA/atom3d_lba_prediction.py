@@ -18,9 +18,9 @@ from experiments.ATOM3D_LBA.src.utils import get_pdb_to_neglogkdki_by_split
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_dir', type=str, required=True)
+    parser.add_argument('--pdb_similarity_split', type=int, required=True, choices=[30, 60])
     parser.add_argument('--data_path', type=str, default='./data/')
     parser.add_argument('--output_filename', type=str, default='ATOM3D_latent_space.gz')
-    parser.add_argument('--pdb_similarity_split', type=int, default=30, choices=[30, 60])
     parser.add_argument('--regressor', type=str, default='RF', choices=['linear_sklearn', 'ridge', 'linear_pytorch', 'RF', 'XGBoost', 'MLP'])
     parser.add_argument('--aggr_fn', type=str, default='sum', choices=['sum', 'mean'])
     parser.add_argument('--num_bootstrap_samples', type=int, default=10)
@@ -85,6 +85,12 @@ if __name__ == '__main__':
         'test': []
     }
 
+    truth = {
+        'train': y_by_split['train'],
+        'val': y_by_split['val'],
+        'test': y_by_split['test']
+    }
+
     results = {
         'train': [],
         'val': [],
@@ -119,7 +125,7 @@ if __name__ == '__main__':
     print('----- Averaged results -----')
     for split in ['train', 'val', 'test']:
         rmsd, pearson = [], []
-        for i in range(10):
+        for i in range(args.num_bootstrap_samples):
             rmsd.append(np.sqrt(np.mean((predictions[split][i] - y_by_split[split])**2)))
             pearson.append(scipy.stats.pearsonr(predictions[split][i], y_by_split[split])[0])
         print(f'----- {split} -----')
@@ -134,6 +140,14 @@ if __name__ == '__main__':
         print('RMSE = %.3f' % (np.sqrt(np.mean((predictions[split] - y_by_split[split])**2))))
         print('Pearson r: %.3f' % (scipy.stats.pearsonr(predictions[split], y_by_split[split])[0]))
         print()
+    
+    with gzip.open(os.path.join(args.model_dir, 'predictions-pdb_similarity_split=%d-regressor=%s-aggr_fn=%s-num_bootstrap_samples=%d.pkl.gz' % (args.pdb_similarity_split, args.regressor, args.aggr_fn, args.num_bootstrap_samples)), 'wb') as f:
+        pickle.dump(predictions, f)
+
+    with gzip.open(os.path.join(args.model_dir, 'truth-pdb_similarity_split=%d.pkl.gz' % (args.pdb_similarity_split)), 'wb') as f:
+        pickle.dump(truth, f)
+    
+    
     
 
         

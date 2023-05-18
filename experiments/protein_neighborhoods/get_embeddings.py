@@ -34,6 +34,10 @@ if __name__ == '__main__':
                         help='Whether to process all pdbs at once before running inference, or perform inference one pdb at a time.\
                              "all_at_once" is faster and can benefit from batching, but requires more memory.\
                              "one_at_a_time" is slower and cannot benefit from batching, but requires less memory.')
+
+    parser.add_argument('--parser', type=str, default='biopython',
+                        choices = ['biopython', 'pyrosetta'],
+                        help='')
     
     args = parser.parse_args()
 
@@ -52,7 +56,8 @@ if __name__ == '__main__':
                                                                                             data_filepath=os.path.join(args.pdb_dir, pdb_file),
                                                                                             verbose=False,
                                                                                             loading_bar=False,
-                                                                                            batch_size=args.batch_size)
+                                                                                            batch_size=args.batch_size,
+                                                                                            parser=args.parser)
 
             all_res_ids.append(res_ids)
             all_inv_embeddings.append(inv_embeddings)
@@ -72,7 +77,8 @@ if __name__ == '__main__':
                                                                                                        data_filepath=args.pdb_list,
                                                                                                        pdb_dir=args.pdb_dir,
                                                                                                        loading_bar=True,
-                                                                                                       batch_size=args.batch_size)
+                                                                                                       batch_size=args.batch_size,
+                                                                                                       parser=args.parser)
         
         print('Took {} seconds to generate embeddings for {} PDBs.'.format(time() - start, pd.read_csv(args.pdb_list)['pdb'].shape[0]))
 

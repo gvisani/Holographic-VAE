@@ -1,7 +1,9 @@
 
-## On the current necessity of pyrosetta
+## On pyrosetta vs. biopython for PDB processing
 
-Currently, our code is dependent on pyrosetta which can be downloaded from [here](https://www.pyrosetta.org/downloads#h.6vttn15ac69d). A license is available at no cost to academics and can be obtained [here](https://www.pyrosetta.org/home/licensing-pyrosetta). However, the use of pyrosetta can be bypassed by users if they write a custom script that parses PDB files; see the README in the `preprocessing` folder for more details. We plan on releasing a script using an alternative PDB parser soon.
+We provide two version of our code that parses PDB structures: one that uses pyrosetta, and one that uses biopython. The main issue with pyrosetta is that it is not free to use for all non-academic practitioners. However, it is nice because it allows us to easily compute physicochemical quantities (SASA and charge), as well as secondary structure. However, our current H-(V)AE models do **not** use physicochemical quantities, and therefore, the use of pyrosetta is not necessary.
+
+pyrosetta can be downloaded from [here](https://www.pyrosetta.org/downloads#h.6vttn15ac69d). A license is available at no cost to academics and can be obtained [here](https://www.pyrosetta.org/home/licensing-pyrosetta).
 
 
 ## Extracting H-(V)AE embeddings from a series of PDBs

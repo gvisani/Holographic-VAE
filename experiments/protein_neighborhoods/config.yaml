@@ -15,9 +15,9 @@ normalize_input: true
 
 # model hparams
 model_hparams: 
-  latent_dim: 256
+  latent_dim: 128
   net_lmax: 6
-  ch_size_list: [64, 64, 64, 128, 256, 256]
+  ch_size_list: [60, 60, 60, 90, 128, 128]
   lmax_list: [6, 6, 6, 4, 2, 1]
   ls_nonlin_rule_list: ['efficient', 'efficient', 'efficient', 'efficient', 'efficient', 'efficient']
   ch_nonlin_rule_list: ['elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise', 'elementwise']
@@ -31,7 +31,7 @@ model_hparams:
   norm_affine: 'per_l'
   linearity_first: false
   learn_frame: true
-  is_vae: false
+  is_vae: true
   norm_nonlinearity: null
   norm_balanced: false
   bottleneck_hidden_dims: null
@@ -43,14 +43,14 @@ model_hparams:
 
 # training hparams
 weight_decay: true
-n_epochs: 8
-no_kl_epochs: 0
-warmup_kl_epochs: 0
-lr: 0.001
-lr_scheduler: 'constant' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
+n_epochs: 12
+no_kl_epochs: 4
+warmup_kl_epochs: 2
+lr: 0.0025
+lr_scheduler: 'log_decrease_until_end_of_warmup' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
 batch_size: 512
-lambdas: [1000.0, 0.0]
-lambdas_schedule: 'constant' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
+lambdas: [1000.0, 0.5]
+lambdas_schedule: 'linear_up_anneal_kl' # choices=['constant', 'drop_kl_at_half', 'linear_up_anneal_kl']
 
 
 # rng seed

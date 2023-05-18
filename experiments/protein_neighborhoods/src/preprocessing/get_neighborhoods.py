@@ -5,6 +5,7 @@ from sklearn.neighbors import KDTree
 
 from typing import *
 
+NUM_FIELDS = 5
 
 def get_neighborhoods(proteins: np.ndarray,
                       r: float = 10.0,
@@ -22,9 +23,9 @@ def get_neighborhoods(proteins: np.ndarray,
         ('elements', 'S1', (max_atoms)),
         ('res_ids', 'S50', (max_atoms, 6)),
         ('coords', 'f4', (max_atoms, 3)),
-        ('SASAs', 'f4', (max_atoms)),
+        # ('SASAs', 'f4', (max_atoms)),
         # ('RSAs', 'f4', (max_atoms)),
-        ('charges', 'f4', (max_atoms)),
+        # ('charges', 'f4', (max_atoms)),
     ])
     
     neighborhoods = []
@@ -83,7 +84,7 @@ def get_neighborhoods_from_protein(np_protein, r=10.0, remove_central_residue=Tr
     
     get_neighbors_custom = partial(
         get_neighbors,                          
-        npProtein = [np_protein[x] for x in range(1,7)]
+        npProtein = [np_protein[x] for x in range(1,NUM_FIELDS)]
     )
 
     res_ids = np_protein['res_ids'][real_locs]
@@ -165,7 +166,7 @@ def pad_neighborhoods(
     for i,neighborhood in enumerate(neighborhoods):
         padded_neighborhoods.append(
             pad_neighborhood(
-                [neighborhood[i] for i in range(1,7)],
+                [neighborhood[i] for i in range(1,NUM_FIELDS)],
                 padded_length=padded_length
             )
         )

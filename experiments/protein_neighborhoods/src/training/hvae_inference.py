@@ -48,7 +48,8 @@ def hvae_inference(experiment_dir: str,
                     n_finetuning_epochs: int = 0,
                     verbose: bool = False,
                     loading_bar: bool = True,
-                    batch_size: int = 100):
+                    batch_size: int = 100,
+                    parser: str = 'biopython'):
 
     # get hparams from json
     with open(os.path.join(experiment_dir, 'hparams.json'), 'r') as f:
@@ -76,7 +77,7 @@ def hvae_inference(experiment_dir: str,
         from holographic_vae.so3.functional import filter_by_l
 
         if data_filepath[-4:] == '.pdb': # --> single pdb is provided
-            protein = get_structural_info(data_filepath)
+            protein = get_structural_info(data_filepath, parser=parser)
             nbs = get_neighborhoods(protein, remove_central_residue = False, backbone_only = False)
 
         else: # (data_filepath[-4:] == '.csv' and pdb_dir is not None) --> list of pdbs is provided
@@ -84,7 +85,7 @@ def hvae_inference(experiment_dir: str,
             if verbose: print('Collecting neighborhoods from %d PDB files...' % len(pdb_list))
             sys.stdout.flush()
             
-            proteins = get_structural_info([os.path.join(pdb_dir, pdb+'.pdb') for pdb in pdb_list])
+            proteins = get_structural_info([os.path.join(pdb_dir, pdb+'.pdb') for pdb in pdb_list], parser=parser)
             nbs = get_neighborhoods(proteins, remove_central_residue = False, backbone_only = False)
 
         orig_OnRadialFunctions = ZernickeRadialFunctions(hparams['rcut'], hparams['rmax']+1, hparams['collected_lmax'], complex_sph = False)

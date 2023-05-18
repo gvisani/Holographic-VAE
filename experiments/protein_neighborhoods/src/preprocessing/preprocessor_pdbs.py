@@ -24,13 +24,9 @@ def process_data_dir(pdb,pdb_dir):
     pdb = pdb if isinstance(pdb, str) else pdb.decode('utf-8')
 
     pdb_file = os.path.join(pdb_dir, pdb + '.pdb')
-    try:
-        pose = pyrosetta.pose_from_pdb(pdb_file)
-    except:
-        print('Pose could ot be created for protein {}'.format(pdb))
-        return process_data_dir.callback(None,**process_data_dir.params)
+
     #print('pdb is ',pdb,pose.pdb_info().name())
-    return process_data_dir.callback(pose, **process_data_dir.params)
+    return process_data_dir.callback(pdb_file, **process_data_dir.params)
 
 def initializer(init, callback, params, init_params):
     if init is not None:

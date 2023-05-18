@@ -10,20 +10,16 @@ import h5py
 import sys
 from progress.bar import Bar
 
-def callback(pose):
-
-    if pose is None:
-        print('pose is none')
-        return (None,)
+def callback(pdb_file, parser):
 
     try:
-        pdb,ragged_structural_info = get_structural_info_from_protein(pose)
+        pdb,ragged_structural_info = get_structural_info_from_protein(pdb_file, parser)
         mat_structural_info = pad_structural_info(
             ragged_structural_info,padded_length=200000
         )
     except Exception as e:
         print(e)
-        print('Error with',pose.pdb_info().name())
+        print('Error with', )
         return (None,)
 
     
@@ -47,6 +43,9 @@ if __name__ == "__main__":
     parser.add_argument('--pdb_dir', type=str, required=True,
                         help='Directory containing PDB files.')
     
+    parser.add_argument('--parser', type=str, default='biopython', choices=['biopython', 'pyrosetta'],
+                        help='Which PDB parser to use.')
+    
     args = parser.parse_args()
 
     pdb_list = list(pd.read_csv(args.pdb_list)['pdb'])
@@ -66,13 +65,13 @@ if __name__ == "__main__":
 
     max_atoms = 200000
     dt = np.dtype([
-        ('pdb','S4',()),
+        ('pdb','S50',()),
         ('atom_names', 'S4', (max_atoms)),
         ('elements', 'S1', (max_atoms)),
         ('res_ids', 'S6', (max_atoms, 6)),
         ('coords', 'f4', (max_atoms, 3)),
-        ('SASAs', 'f4', (max_atoms)), # unused in H-(V)AE
-        ('charges', 'f4', (max_atoms)), # unused in H-(V)AE
+        # ('SASAs', 'f4', (max_atoms)), # unused in H-(V)AE
+        # ('charges', 'f4', (max_atoms)), # unused in H-(V)AE
     ])
     with h5py.File(args.output_hdf5,'w') as f:
         f.create_dataset(args.output_dataset_name,
@@ -89,12 +88,12 @@ if __name__ == "__main__":
                     bar.next()
                     n+=1
                     continue
-                pdb,atom_names,elements,res_ids,coords,sasas,charges = (*structural_info,) #,rsas
+                pdb,atom_names,elements,res_ids,coords = (*structural_info,) #,sasas,charges
                 #print(pdb)
                 #print(max_atoms - np.sum(atom_names == b''),'atoms in array')
                 #print('wrting to hdf5')
                 try:
-                    f[args.output_dataset_name][i] = (pdb,atom_names,elements,res_ids,coords,sasas,charges) # ,sasas,rsas,charges)
+                    f[args.output_dataset_name][i] = (pdb,atom_names,elements,res_ids,coords) # ,sasas,charges)
                     #print('success')
                 except Exception as e:
                     print(e)

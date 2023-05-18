@@ -59,7 +59,7 @@ def hvae_inference_atom3d_lba(experiment_dir: str,
 
 
     # construct dataset objects using atom3d dataset and custom transform
-    transform = NeighborhoodsTransform(elements=hparams['channels'], nb_radius=hparams['rcut'], remove_H=True, remove_water=True, remove_hetero=True, remove_noncanonical_insertion_codes=True, standardize_nonprotein_elements=False)
+    transform = NeighborhoodsTransform(elements=hparams['channels'], nb_radius=hparams['rcut'], remove_H=True, remove_water=True, remove_hetero=False, remove_noncanonical_insertion_codes=False, standardize_nonprotein_elements=False)
     dataset = LMDBDataset(path_to_raw_data, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False, collate_fn=neighborhoods_collate_fn, drop_last=False)
 

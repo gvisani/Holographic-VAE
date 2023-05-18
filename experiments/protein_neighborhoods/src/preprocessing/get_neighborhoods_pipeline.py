@@ -112,8 +112,8 @@ if __name__ == "__main__":
         ('elements', 'S1', (MAX_ATOMS)),
         ('res_ids', 'S50', (MAX_ATOMS, 6)),
         ('coords', 'f4', (MAX_ATOMS, 3)),
-        ('SASAs', 'f4', (MAX_ATOMS)),
-        ('charges', 'f4', (MAX_ATOMS)),
+        # ('SASAs', 'f4', (MAX_ATOMS)),
+        # ('charges', 'f4', (MAX_ATOMS)),
     ])
     print(dt)
     print('writing hdf5 file')

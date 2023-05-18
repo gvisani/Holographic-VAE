@@ -9,29 +9,18 @@ from typing import List,Tuple
 import h5py
 import numpy as np
 
-import pyrosetta
-from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
-from pyrosetta.rosetta.core.pose import Pose
-from pyrosetta.rosetta.core.id import (
-    AtomID,AtomID_Map_double_t,AtomID_Map_bool_t)
-from pyrosetta.rosetta.core.scoring import calc_per_atom_sasa
-from pyrosetta.rosetta.core.scoring.hbonds import HBondSet
-from pyrosetta.rosetta.protocols.moves import DsspMover
-from pyrosetta.rosetta.utility import vector1_double
-
 from typing import *
 
 
 def get_structural_info(pdb_filepath: Union[str, List[str]],
-                        max_atoms: int = 200000
+                        max_atoms: int = 200000,
+                        parser: str = 'biopython'
                         ) -> np.array:
     '''
     Get structural info from either a single pdb file, or a list of pdbs, using pyrosetta.
     '''
 
-    # init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -ignore_waters 1'
-    init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -include_sugars -ignore_zero_occupancy false -obey_ENDMDL 1'
-    pyrosetta.init(init_flags, silent=True)
+    assert parser in {'pyrosetta', 'biopython'}
 
     dt = np.dtype([
             ('pdb','S50',()),
@@ -39,9 +28,9 @@ def get_structural_info(pdb_filepath: Union[str, List[str]],
             ('elements', 'S1', (max_atoms)),
             ('res_ids', 'S50', (max_atoms, 6)),
             ('coords', 'f4', (max_atoms, 3)),
-            ('SASAs', 'f4', (max_atoms)),
+            # ('SASAs', 'f4', (max_atoms)),
             # ('RSAs', 'f4', (max_atoms)),
-            ('charges', 'f4', (max_atoms)),
+            # ('charges', 'f4', (max_atoms)),
         ])
 
     if isinstance(pdb_filepath, str):
@@ -50,9 +39,8 @@ def get_structural_info(pdb_filepath: Union[str, List[str]],
     np_protein = np.zeros(shape=(len(pdb_filepath)), dtype=dt) 
 
     for i, pdb_file in enumerate(pdb_filepath):
-        pose = pyrosetta.pose_from_pdb(pdb_file)
 
-        si = get_padded_structural_info(pose, padded_length=max_atoms)
+        si = get_padded_structural_info(pdb_file, padded_length=max_atoms, parser=parser)
         np_protein[i] = (*si,)
 
     return np_protein
@@ -62,7 +50,7 @@ def get_structural_info(pdb_filepath: Union[str, List[str]],
 
 
 def get_padded_structural_info(
-    pose: Pose, padded_length: int=200000) -> Tuple[
+    pdb_file: str, padded_length: int=200000, parser: str = 'biopython') -> Tuple[
     bytes,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray]:
     """
     Extract structural info used for holographic projection from PyRosetta pose.
@@ -87,95 +75,19 @@ def get_padded_structural_info(
             float array of shape [max_atoms] storing the partial charge of each atom
     """
 
-    pdb,ragged_structural_info = get_structural_info_from_protein(pose)
+    if parser == 'biopython':
+        pdb, ragged_structural_info = get_structural_info_from_protein__biopython(pdb_file)
+    elif parser == 'pyrosetta':
+        pdb, ragged_structural_info = get_structural_info_from_protein__pyrosetta(pdb_file)
+
     mat_structural_info = pad_structural_info(
         ragged_structural_info,padded_length=padded_length
     )
 
-    return (pdb,*mat_structural_info)
+    return (pdb, *mat_structural_info)
 
-def get_pose_residue_number(
-    pose: Pose, 
-    chain: str, 
-    resnum: int, 
-    icode: str=' '
-) -> int:
-    """Translate pdb residue id to pyrosetta index"""
-    return pose.pdb_info().pdb2pose(chain, resnum, icode)
 
-def get_pdb_residue_info(
-    pose : Pose, 
-    resnum : int
-) -> Tuple[str, int, str]:
-    """Translate pyrosetta index to pdb residue id"""
-    pi = pose.pdb_info()
-    return (pi.chain(resnum), pi.number(resnum), pi.icode(resnum))
-
-def calculate_sasa(
-    pose : Pose,
-    probe_radius : float=1.4
-) -> AtomID_Map_double_t:
-    """Calculate SASA for a pose"""
-    # pyrosetta structures for returning of sasa information
-    all_atoms = AtomID_Map_bool_t()
-    atom_sasa = AtomID_Map_double_t()
-    rsd_sasa = vector1_double()
-    
-    # use pyrosetta to calculate SASA per atom
-    calc_per_atom_sasa(
-        pose,
-        atom_sasa,
-        rsd_sasa,
-        probe_radius
-    )
-    
-    return atom_sasa
-
-def get_hb_counts(
-    hbond_set: HBondSet,
-    i: int
-):
-    """
-    Classifies a pose's h-bonds by main- and side-chain linkages
-    
-    Parameters
-    ----------
-    hbond_set : 
-        The h-bond object from pyrosetta
-    i : int
-       
-    Returns
-    -------
-    np.ndarray
-        Float array of shape [8] where each entry is the number of
-        h-bonds where the central residue and the partner are categorized 
-        according to the donor/accceptor role and the backbone (bb) vs. 
-        side-chain (sc) location of the bond. Specifically, the array is 
-        organized as
-            central|partner
-            ---------------
-            acc-bb  don-bb
-            don-bb  acc-bb
-            acc-bb  don-sc
-            don-bb  acc-sc
-            acc-sc  don-bb
-            don-sc  acc-bb
-            acc-sc  don-sc
-            don-sc  acc-sc
-    """
-    counts = np.zeros(8,dtype=int)
-    for hb in hbond_set.residue_hbonds(i):
-        ctrl_don = hb.don_res() == i
-        if ctrl_don:
-            ctrl_side = not hb.don_hatm_is_backbone()
-            nb_side = not hb.acc_atm_is_backbone()
-        else:
-            ctrl_side = not hb.acc_atm_is_backbone()
-            nb_side = not hb.don_hatm_is_backbone()
-        counts[4*ctrl_side + 2*nb_side + 1*ctrl_don] += 1
-    return counts
-
-def get_structural_info_from_protein(pose : Pose) -> Tuple[
+def get_structural_info_from_protein__pyrosetta(pdb_file : str) -> Tuple[
     str,
     Tuple[
         np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray,np.ndarray
@@ -197,6 +109,20 @@ def get_structural_info_from_protein(pose : Pose) -> Tuple[
         the atom names, elements, residue ids, coordinates, SASAs, and charges 
         for each atom in the protein.
     """
+
+    import pyrosetta
+    from pyrosetta.toolbox.extract_coords_pose import pose_coords_as_rows
+    from pyrosetta.rosetta.core.id import AtomID
+    from pyrosetta.rosetta.protocols.moves import DsspMover
+
+    from .pyrosetta_utils import calculate_sasa
+
+    # init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -ignore_waters 1'
+    init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -include_sugars -ignore_zero_occupancy false -obey_ENDMDL 1'
+
+    pyrosetta.init(init_flags, silent=True)
+
+    pose = pyrosetta.pose_from_pdb(pdb_file)
 
     # from .biophysics import MAXASA_TABLE
 
@@ -286,7 +212,89 @@ def get_structural_info_from_protein(pose : Pose) -> Tuple[
     charges = np.array(charges)
     res_ids = np.array(res_ids)
     
-    return pdb,(atom_names,elements,res_ids,coords,sasas,charges) #,sasas,rsas,charges)
+    return pdb,(atom_names,elements,res_ids,coords) #,sasas,charges)
+
+
+def get_structural_info_from_protein__biopython(
+    pdb_file : str,
+    remove_nonwater_hetero: bool = False,
+    remove_waters: bool = True,
+    ):
+    
+    '''
+    atom full id:
+        - (PDB, model_num, chain, (hetero_flag, resnum, insertion_code), (atom_name, disorder_altloc))
+    
+    By default, biopyton selects only atoms with the highest occupancy, thus behaving like pyrosetta does with the flag "-ignore_zero_occupancy false"
+    '''
+
+    from Bio.PDB import PDBParser
+    parser = PDBParser()
+
+    structure = parser.get_structure(pdb_file[:-4], pdb_file)
+
+    
+    aa_to_one_letter = {'ALA': 'A', 'CYS': 'C', 'ASP': 'D', 'GLU': 'E',
+                        'PHE': 'F', 'GLY': 'G', 'HIS': 'H', 'ILE': 'I',
+                        'LYS': 'K', 'LEU': 'L', 'MET': 'M', 'ASN': 'N',
+                        'PRO': 'P', 'GLN': 'Q', 'ARG': 'R', 'SER':'S',
+                        'THR': 'T', 'VAL': 'V', 'TRP': 'W', 'TYR': 'Y'}
+
+    # assume only one model is present in the structure
+    models = list(structure.get_models())
+    assert len(models) == 1
+
+    # assume the pdb name was provided as id to create the structure
+    pdb = structure.get_id()
+
+    # lists for each type of information to obtain
+    atom_names = []
+    elements = []
+    coords = []
+    res_ids = []
+    
+    k = 0
+    
+    def pad_for_consistency(string):
+        return (' ' + string).ljust(4, ' ')
+    
+    # get structural info from each residue in the protein
+    for atom in structure.get_atoms():
+
+        atom_full_id = atom.get_full_id()
+        
+        if remove_waters and atom_full_id[3][0] == 'W':
+            continue
+        
+        if remove_nonwater_hetero and atom_full_id[3][0] not in {' ' 'W'}:
+            continue
+
+        chain = atom_full_id[2]
+        resnum = atom_full_id[3][1]
+        icode = atom_full_id[3][2]
+        atom_name = pad_for_consistency(atom.get_name())
+        element = atom.element
+        coord = atom.get_coord()
+
+        aa = atom.get_parent().resname
+        if aa in aa_to_one_letter:
+            aa = aa_to_one_letter[aa]
+
+        res_id = np.array([aa,pdb,chain,resnum,icode,'null'],dtype='S5') # adding 'null' in place of secondary structure for compatibility
+        
+        atom_names.append(atom_name)
+        elements.append(element)
+        res_ids.append(res_id)
+        coords.append(coord)
+        
+        k += 1
+            
+    atom_names = np.array(atom_names,dtype='|S4')
+    elements = np.array(elements,dtype='S1')
+    coords = np.array(coords)
+    res_ids = np.array(res_ids)
+    
+    return pdb,(atom_names,elements,res_ids,coords)
 
 # given a matrix, pad it with empty array
 def pad(
