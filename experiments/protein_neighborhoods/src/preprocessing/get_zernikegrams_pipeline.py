@@ -12,6 +12,8 @@ import os
 from argparse import ArgumentParser
 from progress.bar import Bar
 import h5py
+import hdf5plugin
+from hdf5plugin import LZ4
 import sys
 from holographic_vae.so3 import RadialSphericalTensor, MultiChannelRadialSphericalTensor, ZernickeRadialFunctions
 
@@ -134,7 +136,8 @@ if __name__ == "__main__":
         f.create_dataset(args.output_dataset_name,
                          shape=(curr_size,),
                          maxshape=(None,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=LZ4())
 
     with h5py.File(args.output_hdf5, 'r+') as f:
         with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:

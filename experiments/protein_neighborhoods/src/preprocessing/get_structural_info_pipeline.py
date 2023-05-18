@@ -7,6 +7,8 @@ from argparse import ArgumentParser
 import numpy as np
 import pandas as pd
 import h5py
+import hdf5plugin
+from hdf5plugin import LZ4
 import sys
 from progress.bar import Bar
 
@@ -76,7 +78,8 @@ if __name__ == "__main__":
     with h5py.File(args.output_hdf5,'w') as f:
         f.create_dataset(args.output_dataset_name,
                          shape=(ds.size,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=LZ4())
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
         with h5py.File(args.output_hdf5,'r+') as f:
             for i,structural_info in enumerate(ds.execute(

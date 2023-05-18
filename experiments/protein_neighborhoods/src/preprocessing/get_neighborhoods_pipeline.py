@@ -5,6 +5,8 @@ from preprocessor_hdf5_proteins import PDBPreprocessor
 from argparse import ArgumentParser
 import numpy as np
 import h5py
+import hdf5plugin
+from hdf5plugin import LZ4
 import sys
 import logging
 from progress.bar import Bar
@@ -123,7 +125,8 @@ if __name__ == "__main__":
         f.create_dataset(args.output_dataset_name,
                          shape=(curr_size,),
                          maxshape=(None,),
-                         dtype=dt)
+                         dtype=dt,
+                         compression=LZ4())
         
     print('calling parallel process')
     with Bar('Processing', max = ds.count(), suffix='%(percent).1f%%') as bar:
