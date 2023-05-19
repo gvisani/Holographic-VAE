@@ -47,11 +47,11 @@ Code to replicate our experiments on the ATOM3D Ligand Binding Affinity task, wh
 <pre>
 @misc{visani_holographic-vae_2023,  
       title = {Holographic-({V}){AE}: an end-to-end {SO}(3)-{Equivariant} ({Variational}) {Autoencoder} in {Fourier} {Space}},  
-       author = {Visani, Gian Marco and Pun, Michael N. and Angaji, Arman and Nourmohammad, Armita},  
-       year = {2023},  
-       publisher = {bioRxiv},  
-       doi = {10.1101/2022.09.30.510350},  
-       url = {https://www.biorxiv.org/content/10.1101/2022.09.30.510350v2}  
+      author = {Visani, Gian Marco and Pun, Michael N. and Angaji, Arman and Nourmohammad, Armita},  
+      year = {2023},  
+      publisher = {bioRxiv},  
+      doi = {10.1101/2022.09.30.510350},  
+      url = {https://www.biorxiv.org/content/10.1101/2022.09.30.510350v2}  
  }
-<\pre>
+</pre>
 
