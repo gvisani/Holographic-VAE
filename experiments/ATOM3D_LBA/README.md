@@ -15,14 +15,28 @@ pip install atom3d
 
 ## Making predictions using a pre-trained H-(V)AE model
 
+### Step 1: Download a pre-trained model, or train a new one
+
+Go to `/experiments/protein_neighborhoods/` and follow the instructions in the README to download a pre-trained model, or train one from scratch using your data.
+
+For example, run
+
+```
+python download_pretrained_models.py --model_id HAE-z=128-lmax=6-rst_norm=square
+```
+
+to download our pretrained H-AE model with latent space size 128.
+
+### Step 2: Extract H-(V)AE embeddings for residues in the pocket, and regress over binding affinity
+
 The script `atom3d_lba_prediction.py` can be used to predict Ligand Binding Affinity on the ATOM3D dataset, using a pretrained H-(V)AE model (saved, along with its `hparams.json` file, in `MODEL_DIR`).
 The script first extracts H-(V)AE embeddings for residues in the pocket. Following ATOM3D, we consider residues to be in the pocket if their $C\alpha$ is within $6.0 \AA$ of any atom in the ligand.
 ; on a single A40 GPU and a model with ~2.6M parameters, this takes about 15 minutes. The embeddings are stored in `MODEL_DIR`, so that they only need to be computed once for each H-(V)AE model.
 
-For example, to make predictions on the 30% similairty split, using an ensemble of 10 Random Forests trained on top of sums of embeddings our pretrained H-AE saved in `../protein_neighborhoods/runs/hae-z=128-lmax=6-collected_lmax=6-rst_norm=square/`, run
+For example, to make predictions on the 30% similairty split, using an ensemble of 10 Random Forests trained on top of sums of embeddings our pretrained H-AE saved in `../protein_neighborhoods/runs/HAE-z=128-lmax=6-rst_norm=square/`, run
 
 ```bash
-python atom3d_lba_prediction.py --model_dir ../protein_neighborhoods/runs/hae-z=128-lmax=6-collected_lmax=6-rst_norm=square/ \
+python atom3d_lba_prediction.py --model_dir ../protein_neighborhoods/runs/HAE-z=128-lmax=6-rst_norm=square/ \
                                 --data_path ./data/ \
                                 --pdb_similarity_split 30 \
                                 --regressor RF \

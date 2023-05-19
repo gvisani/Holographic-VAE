@@ -6,9 +6,30 @@ We provide two version of our code that parses PDB structures: one that uses pyr
 pyrosetta can be downloaded from [here](https://www.pyrosetta.org/downloads#h.6vttn15ac69d). A license is available at no cost to academics and can be obtained [here](https://www.pyrosetta.org/home/licensing-pyrosetta).
 
 
-## Extracting H-(V)AE embeddings from a series of PDBs
+## Download a pre-trained model
 
-*Automatic download of pre-trained models is not yet supported. Send us an email to get access to the pre-trained models from the paper.*
+Our pre-trained models can be downloaded using the script `download_pretrained_model.py`:
+
+```
+usage: download_pretrained_models.py [-h] [--model_id {HAE-z=128-lmax=6-rst_norm=square}] [--download_dir DOWNLOAD_DIR]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model_id {HAE-z=128-lmax=6-rst_norm=square}
+                        Model ID to download.
+  --download_dir DOWNLOAD_DIR
+                        Directory to download the model to. Set to ./runs/ by default.
+```
+
+Currently, we support the following models:
+
+| Model ID | latent space size | $\ell_{max}$ | rst Norm |
+| --- | --- | --- | --- |
+| HAE-z=128-lmax=6-rst_norm=square | 128 | 6 | square |
+
+
+
+## Extracting H-(V)AE embeddings from a series of PDBs
 
 Use the `get_embeddings.py` script to get embeddings from a pre-trained model.
 The script takes as input a series of pdbs, and outputs invariant (L = 0) embeddings and equivariant (L = 1) frames.
