@@ -5,7 +5,7 @@
 # print(rlimit)
 # resource.setrlimit(resource.RLIMIT_NOFILE, (rlimit[1], rlimit[1]))
 
-from experiments.protein_neighborhoods.src.preprocessing.preprocessor_neighborhoods import HDF5Preprocessor
+from experiments.protein_neighborhoods.src.preprocessing.preprocessor_hdf5_neighborhoods import HDF5Preprocessor
 import numpy as np
 import itertools
 import os

@@ -11,12 +11,6 @@ from multiprocessing import Pool, TimeoutError
 
 import h5py
 import sys
-sys.path.append('/gscratch/stf/mpun/software/PyRosetta4.Release.python38.linux.release-299')
-import pyrosetta
-# from pyrosetta.rosetta import core, protocols, numeric, basic, utility
-
-init_flags = '-ignore_unrecognized_res 1 -include_current -ex1 -ex2 -mute all -ignore_zero_occupancy false -obey_ENDMDL 1'
-pyrosetta.init(init_flags)
 
 def process_data_dir(pdb,pdb_dir):
     assert(process_data_dir.callback)
