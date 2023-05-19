@@ -43,3 +43,16 @@ Code to use H-(V)AE on protein neighborhoods. We provide code to use our pre-tra
 Code to replicate our experiments on the ATOM3D Ligand Binding Affinity task, where our method achieves state-of-the-art performance, as shown in our paper.
 
 **Note:** this necessitates having a trained H-(V)AE model, either provided by us, or user-trained. Checkout the README in `experiments/protein_neighborhoods` to learn how to download a pre-trained model, or train a new one with your data.
+
+---
+
+@misc{visani_holographic-vae_2023,
+  title = {Holographic-({V}){AE}: an end-to-end {SO}(3)-{Equivariant} ({Variational}) {Autoencoder} in {Fourier} {Space}},
+  author = {Visani, Gian Marco and Pun, Michael N. and Angaji, Arman and Nourmohammad, Armita},
+	year = {2023},
+  publisher = {bioRxiv},
+  doi = {10.1101/2022.09.30.510350},
+  url = {https://www.biorxiv.org/content/10.1101/2022.09.30.510350v2}
+ }
+
+
