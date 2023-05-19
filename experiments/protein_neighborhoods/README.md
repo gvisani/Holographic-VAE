@@ -23,7 +23,7 @@ optional arguments:
 
 Currently, we support the following models:
 
-| Model ID | latent space size | $\ell_{max}$ | rst Norm |
+| Model ID | latent space size | $\ell_{max}$ | rst norm |
 | --- | --- | --- | --- |
 | HAE-z=128-lmax=6-rst_norm=square | 128 | 6 | square |
 
