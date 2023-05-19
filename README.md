@@ -46,7 +46,7 @@ Code to replicate our experiments on the ATOM3D Ligand Binding Affinity task, wh
 ---
 <pre>
 @misc{visani_holographic-vae_2023,  
-      title = {Holographic-({V}){AE}: an end-to-end {SO}(3)-{Equivariant} ({Variational}) {Autoencoder} in {Fourier} {Space}},  
+      title = {Holographic-(V)AE: an end-to-end SO(3)-Equivariant (Variational) Autoencoder in Fourier Space},  
       author = {Visani, Gian Marco and Pun, Michael N. and Angaji, Arman and Nourmohammad, Armita},  
       year = {2023},  
       publisher = {bioRxiv},  
