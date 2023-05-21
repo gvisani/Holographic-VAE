@@ -50,7 +50,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
-    pdb_list = list(pd.read_csv(args.pdb_list)['pdb'])
+    pdb_list = list(pd.read_csv(args.pdb_list, index_col=False)['pdb'])
 
     pdb_list_from_dir = []
     for file in os.listdir(args.pdb_dir):
