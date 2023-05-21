@@ -55,7 +55,7 @@ if __name__ == "__main__":
     pdb_list_from_dir = []
     for file in os.listdir(args.pdb_dir):
         if file.endswith(".pdb"):
-            pdb = file[:4]
+            pdb = file.strip('.pdb')
             pdb_list_from_dir.append(pdb)
     
     # filter out pdbs that are not in the directory
