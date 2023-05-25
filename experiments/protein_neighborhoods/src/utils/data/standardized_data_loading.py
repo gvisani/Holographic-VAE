@@ -220,8 +220,9 @@ def load_data_OLD(hparams, splits=['train', 'valid'], test_data_filepath=None):
 
         test_data = torch.tensor(test_arrays['projections'])
 
-        if hparams['normalize_input'] and norm_factor is not None:
-            test_data = test_data / norm_factor
+        # don't normalize test data
+        # if hparams['normalize_input'] and norm_factor is not None:
+        #     test_data = test_data / norm_factor
 
         test_labels = torch.tensor(test_arrays['labels']) if 'labels' in test_arrays else torch.tensor(np.full(test_data.shape[0], np.nan))
         try:

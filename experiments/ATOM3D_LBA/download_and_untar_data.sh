@@ -1,7 +1,7 @@
 
 datadir=./data/
 
-makedirs $datadir
+mkdir -p $datadir
 
 echo downloading data ...
 
