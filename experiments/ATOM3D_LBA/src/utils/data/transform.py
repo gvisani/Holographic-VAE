@@ -64,8 +64,8 @@ class BaseNeighborhoodsTransform(object):
     NB: the residues with non-canonical insertion codes are usually NOT at the same location as their canonical counterpart! They are in the vicinity, but not quite there. I wanna see them in pymol.
     '''
 
-    def __init__(self, nb_radius=10.0, remove_H=True, remove_water=True, remove_hetero=True, remove_noncanonical_insertion_codes=False, standardize_nonprotein_elements=True):
-        self.nb_radius = nb_radius # called "rcut" in other functions/classed
+    def __init__(self, nb_radius=10.0, remove_H=True, remove_water=True, remove_hetero=False, remove_noncanonical_insertion_codes=False, standardize_nonprotein_elements=True):
+        self.nb_radius = nb_radius # called "rcut" in other functions/classes
         self.remove_H = remove_H
         self.remove_water = remove_water
         self.remove_hetero = remove_hetero
@@ -108,11 +108,11 @@ class BaseNeighborhoodsTransform(object):
         # get alpha-carbons of pocket
         alpha_carbons_pocket_df = item['atoms_pocket'].loc[np.logical_and(item['atoms_pocket']['name'] == 'CA', item['atoms_pocket']['element'] == 'C')]
 
-        # remove atoms (i.e. rows) in joined df of pocket CAs
-        res_ids_ca = np.array(list(map(lambda x : '_'.join(map(str, x)), alpha_carbons_pocket_df[['resname', 'residue', 'chain', 'hetero', 'insertion_code', 'name']].values)))
-        res_ids_all = np.array(list(map(lambda x : '_'.join(map(str, x)), protein_ligand_joined_df[['resname', 'residue', 'chain', 'hetero', 'insertion_code', 'name']].values)))
-        locations_in_all = np.where(np.in1d(res_ids_all, res_ids_ca))[0]
-        protein_ligand_joined_df = protein_ligand_joined_df.drop(locations_in_all).reset_index(drop=True)
+        # remove atoms (i.e. rows) in joined df of pocket CAs --> this was WRONG since it removed CAs for every neighborhood, but we don't want that!
+        # res_ids_ca = np.array(list(map(lambda x : '_'.join(map(str, x)), alpha_carbons_pocket_df[['resname', 'residue', 'chain', 'hetero', 'insertion_code', 'name']].values)))
+        # res_ids_all = np.array(list(map(lambda x : '_'.join(map(str, x)), protein_ligand_joined_df[['resname', 'residue', 'chain', 'hetero', 'insertion_code', 'name']].values)))
+        # locations_in_all = np.where(np.in1d(res_ids_all, res_ids_ca))[0]
+        # protein_ligand_joined_df = protein_ligand_joined_df.drop(locations_in_all).reset_index(drop=True)
 
         from scipy.spatial import KDTree
         tree_ca = KDTree(alpha_carbons_pocket_df[['x', 'y', 'z']].values)
@@ -126,9 +126,11 @@ class BaseNeighborhoodsTransform(object):
         atom_names = []
         res_ids = []
         for res_idx, res_nb_idxs in enumerate(ca_to_all_neighbors_idxs):
-            coords.append(protein_ligand_joined_df[['x', 'y', 'z']].values[res_nb_idxs] - alpha_carbons_pocket_df[['x', 'y', 'z']].values[res_idx]) # center at the CA!
-            elements.append(protein_ligand_joined_df['element'].values[res_nb_idxs])
-            atom_names.append(protein_ligand_joined_df['name'].values[res_nb_idxs])
+            coord = protein_ligand_joined_df[['x', 'y', 'z']].values[res_nb_idxs] - alpha_carbons_pocket_df[['x', 'y', 'z']].values[res_idx] # center at the CA!
+            mask_is_not_000 = np.logical_not(np.all(coord == 0, axis=1)) # remove all-zero rows (only one, corresponding to the central CA)
+            coords.append(coord[mask_is_not_000])
+            elements.append(protein_ligand_joined_df['element'].values[res_nb_idxs][mask_is_not_000])
+            atom_names.append(protein_ligand_joined_df['name'].values[res_nb_idxs][mask_is_not_000])
             res_ids.append(alpha_carbons_pocket_df[['resname', 'residue', 'chain', 'hetero', 'insertion_code']].values[res_idx])
 
         neighborhoods = {
