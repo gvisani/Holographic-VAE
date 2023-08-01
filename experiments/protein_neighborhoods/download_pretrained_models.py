@@ -5,6 +5,7 @@ import urllib.request
 
 MODEL_ID_TO_URL = {
     'HAE-z=128-lmax=6-rst_norm=square': "https://figshare.com/ndownloader/files/40710101",
+    'HAE-z=256-lmax=6-ls_rule=full-rst_norm=square': "https://figshare.com/ndownloader/files/41791344"
 }
 
 def download_weights(
@@ -38,7 +39,7 @@ import argparse
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_id', type=str, default='HAE-z=128-lmax=6-rst_norm=square',
-                                                choices=['HAE-z=128-lmax=6-rst_norm=square'],
+                                                choices=['HAE-z=128-lmax=6-rst_norm=square', 'HAE-z=256-lmax=6-ls_rule=full-rst_norm=square'],
                                                 help='Model ID to download.')
     parser.add_argument('--download_dir', type=str, default='./runs/',
                         help='Directory to download the model to. Set to ./runs/ by default.')
