@@ -26,7 +26,9 @@ Currently, we support the following models:
 | Model ID | latent space size | $\ell_{max}$ | rst norm |
 | --- | --- | --- | --- |
 | HAE-z=128-lmax=6-rst_norm=square | 128 | 6 | square |
+| HAE-z=256-lmax=6-ls_rule=full-rst_norm=square | 256 | 6 | square |
 
+**If you get a URL 403 Error**, it is likely due to geographical constraints. Consider reconfiguring your VPN.
 
 
 ## Extracting H-(V)AE embeddings from a series of PDBs
