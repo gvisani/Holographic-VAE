@@ -1,2 +1,2 @@
 from .hvae_training import hvae_training
-from .hvae_inference import hvae_inference, hvae_standard_evaluation, hvae_reconstruction_tests
+from .hvae_inference import hvae_inference, hvae_standard_evaluation, classification_and_clustering_in_latent_space, hvae_reconstruction_tests

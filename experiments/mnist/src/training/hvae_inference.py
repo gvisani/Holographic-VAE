@@ -28,6 +28,37 @@ from holographic_vae.utils.loss_functions import *
 
 from experiments.mnist.src.utils.data import SphericalMNISTDataset
 
+from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics.cluster import contingency_matrix
+from sklearn.metrics import accuracy_score, classification_report, homogeneity_score, completeness_score, silhouette_score
+
+def purity_score(labels_true, labels_pred):
+    cont_matrix = contingency_matrix(labels_true, labels_pred)
+    return np.sum(np.amax(cont_matrix, axis=0)) / np.sum(cont_matrix)
+
+def latent_space_prediction(train_invariants_ND, train_labels_N, valid_invariants_ND, valid_labels_N, classifier='LR', optimize_hyps=False, data_percentage=100):
+    
+    if classifier == 'LR':
+        estimator = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
+        hyperparams = {'C': [0.1, 0.5, 1.0, 5.0, 10.0]}
+    elif classifier == 'RF':
+        estimator = RandomForestClassifier()
+        hyperparams = {'min_samples_leaf': [1, 2, 5, 10, 20, 50, 100]}
+    
+    if optimize_hyps:
+        model = GridSearchCV(estimator, hyperparams)
+    else:
+        model = estimator
+    
+    model = model.fit(train_invariants_ND, train_labels_N)
+    
+    predictions = model.predict_proba(valid_invariants_ND)
+    onehot_predictions = np.argmax(predictions, axis=1)
+    
+    return classification_report(valid_labels_N, onehot_predictions, output_dict=True)
 
 
 def hvae_inference(experiment_dir: str,
@@ -194,9 +225,6 @@ def hvae_standard_evaluation(experiment_dir: str,
     if not os.path.exists(os.path.join(experiment_dir, 'latent_space_viz')):
         os.mkdir(os.path.join(experiment_dir, 'latent_space_viz'))
     
-    if not os.path.exists(os.path.join(experiment_dir, 'latent_space_classification')):
-        os.mkdir(os.path.join(experiment_dir, 'latent_space_classification'))
-    
 
     ## plot the powers in a scatterplot 
     from scipy.stats import pearsonr, spearmanr
@@ -285,6 +313,57 @@ def hvae_standard_evaluation(experiment_dir: str,
     plt.tight_layout()
     plt.savefig(os.path.join(experiment_dir, 'latent_space_viz/umap-split=%s-%s.png' % (split, model_name)))
     plt.close()
+
+
+def classification_and_clustering_in_latent_space(experiment_dir: str,
+                                                    model_name: str = 'lowest_total_loss_with_final_kl_model',
+                                                    verbose: bool = False,
+                                                    loading_bar: bool = True,
+                                                    batch_size: int = 100):
+    
+    ## make data
+    if not os.path.exists(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('train', model_name))):
+        hvae_inference(experiment_dir, split='train', model_name=model_name, verbose=verbose, loading_bar=loading_bar, batch_size=batch_size)
+    if not os.path.exists(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('valid', model_name))):
+        hvae_inference(experiment_dir, split='valid', model_name=model_name, verbose=verbose, loading_bar=loading_bar, batch_size=batch_size)
+    if not os.path.exists(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('test', model_name))):
+        hvae_inference(experiment_dir, split='test', model_name=model_name, verbose=verbose, loading_bar=loading_bar, batch_size=batch_size)
+
+    ## load data
+    train_arrays = np.load(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('train', model_name)))
+    valid_arrays = np.load(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('valid', model_name)))
+    train_invariants_ND = np.vstack([train_arrays['invariants_ND'], valid_arrays['invariants_ND']])
+    train_labels_N = np.hstack([train_arrays['labels_N'], valid_arrays['labels_N']])
+
+    test_arrays = np.load(os.path.join(experiment_dir, 'evaluation_results-split={}-model_name={}.npz'.format('test', model_name)))
+    test_invariants_ND = test_arrays['invariants_ND']
+    test_labels_N = test_arrays['labels_N']
+
+    
+    if not os.path.exists(os.path.join(experiment_dir, 'latent_space_classification')):
+        os.mkdir(os.path.join(experiment_dir, 'latent_space_classification'))
+
+    ## classification
+    pd.DataFrame(latent_space_prediction(train_invariants_ND, train_labels_N, test_invariants_ND, test_labels_N, classifier='LR', optimize_hyps=True, data_percentage=100)).to_csv(os.path.join(experiment_dir, 'latent_space_classification', 'latent_space_classification-classifier=%s-model_name=%s.csv' % ('LR', model_name)))
+    pd.DataFrame(latent_space_prediction(train_invariants_ND, train_labels_N, test_invariants_ND, test_labels_N, classifier='RF', optimize_hyps=True, data_percentage=100)).to_csv(os.path.join(experiment_dir, 'latent_space_classification', 'latent_space_classification-classifier=%s-model_name=%s.csv' % ('RF', model_name)))
+
+    ## clustering
+    labels_pred_N = KMeans(n_clusters=10, random_state=1234567890, verbose=0).fit_predict(test_invariants_ND)
+
+    homogeneity = homogeneity_score(test_labels_N, labels_pred_N)
+    completeness = completeness_score(test_labels_N, labels_pred_N)
+    purity = purity_score(test_labels_N, labels_pred_N)
+    silhouette = silhouette_score(test_invariants_ND, labels_pred_N)
+
+    table = {
+        'Homogeneity': [homogeneity],
+        'Completeness': [completeness],
+        'Purity': [purity],
+        'Silhouette': [silhouette]
+    }
+
+    pd.DataFrame(table).to_csv(os.path.join(experiment_dir, 'latent_space_classification', 'quality_of_clustering_metrics_default_classes-model_name=%s.csv' % (model_name)))
+
 
 
 

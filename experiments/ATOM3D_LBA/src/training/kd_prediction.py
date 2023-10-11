@@ -14,7 +14,6 @@ from xgboost import XGBRegressor
 from .predictors import LinearRegressor, MLPRegressor
 
 
-
 def select_best_hparams(args, X_train, y_train, X_val, y_val, verbose=False):
 
     best_hparams_filepath = os.path.join(args.model_dir, 'ATOM3D_LBA_best_hparams-aggr_fn=%s-regressor=%s-pdb_similarity_split=%s.json' % (args.aggr_fn, args.regressor, args.pdb_similarity_split))
@@ -42,7 +41,7 @@ def select_best_hparams(args, X_train, y_train, X_val, y_val, verbose=False):
         hyperparams_grid = None
     elif args.regressor == 'RF':
         model_obj = sklearn.ensemble.RandomForestRegressor
-        hyperparams_grid = {'max_features': [1.0, 0.333, 'sqrt'], 'min_samples_leaf': [2, 5, 10, 15], 'n_estimators': [32, 64, 100, 200]}
+        hyperparams_grid = {'max_features': [1.0, 0.333, 'sqrt'], 'min_samples_leaf': [2, 5, 10, 15], 'n_estimators': [32, 64, 100, 200], 'n_jobs': [-1]}
     elif args.regressor == 'XGBoost':
         model_obj = XGBRegressor
         hyperparams_grid = None

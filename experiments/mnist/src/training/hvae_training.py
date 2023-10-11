@@ -145,6 +145,34 @@ def hvae_training(experiment_dir: str):
     else:
         raise NotImplementedError()
     
+    # TODO: fix this guy... it still gives nans, I think when all values are masked to zero. I thought this would fix it but idk, have to test it's doing what I think it is
+    def mask_dict_entries(dict_tensor, p):
+
+        batch_size = dict_tensor[0].shape[0]
+
+        masks = {}
+        batch_is_all_zero = torch.ones((batch_size,)).bool()
+        for l, tensor in dict_tensor.items():
+            B, F, M = tensor.shape
+            masks[l] = torch.rand((B, F)) < p
+            for f in range(F):
+                batch_is_all_zero = torch.logical_and(batch_is_all_zero, masks[l][:, f])
+        
+        # unmask the first half of the features if all features have been sampled to be masked, as a safety precaution, since, when all values are zero, we get nan loss
+        count = 0
+        for l in masks:
+            masks[l][batch_is_all_zero, :] = False
+            count += 1
+            if count == len(masks) // 2:
+                break
+
+        newdict = {}
+        for l, tensor in dict_tensor.items():
+            newtensor = deepcopy(tensor)
+            newtensor[masks[l]] = 0.0
+            newdict[l] = newtensor
+        
+        return newdict
 
     global_record_i = 0
     epoch_start = 0
@@ -181,6 +209,11 @@ def hvae_training(experiment_dir: str):
             X = put_dict_on_device(X, device)
             X_vec = X_vec.float().to(device)
             # y = y.float().to(device)
+
+            if 'noise' in hparams:
+                if hparams['noise'] > 0:
+                    X = mask_dict_entries(X, hparams['noise'])
+                    X = put_dict_on_device(X, device)
 
             frame = rot.float().view(-1, 3, 3).to(device)
 

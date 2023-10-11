@@ -3,7 +3,7 @@ import yaml
 import json
 import argparse
 
-from src.training import hvae_training, hvae_inference, hvae_standard_evaluation, hvae_reconstruction_tests
+from src.training import hvae_training, hvae_inference, hvae_standard_evaluation, classification_and_clustering_in_latent_space, hvae_reconstruction_tests
 from holographic_vae.utils.argparse import *
 
 
@@ -46,5 +46,6 @@ if __name__ == '__main__':
     # perform inference, on standard test data, with basic results
     hvae_inference(args.model_dir, split='test', model_name='lowest_total_loss_with_final_kl_model', verbose=True, loading_bar=True)
     hvae_standard_evaluation(args.model_dir, split='test', model_name='lowest_total_loss_with_final_kl_model')
+    classification_and_clustering_in_latent_space(args.model_dir, model_name='lowest_total_loss_with_final_kl_model', verbose=True, loading_bar=True)
     hvae_reconstruction_tests(args.model_dir, split='test', n_samples=5, model_name='lowest_total_loss_with_final_kl_model', verbose=True)
     

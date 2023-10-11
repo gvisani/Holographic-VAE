@@ -58,7 +58,7 @@ optional arguments:
 
 ## Training a new model
 
-**Step 1:** Pre-process PDBs using the preprocessing pipeline found in the `preprocessing` folder.
+**Step 1:** Pre-process PDBs using the preprocessing pipeline found in the `preprocessing` or the `preprocessing_faster` folder.
 The pipeline will output three hdf5 files (train/valid/test) containing zernike projections of
 the protein neighborhoods in the PDBs.
 

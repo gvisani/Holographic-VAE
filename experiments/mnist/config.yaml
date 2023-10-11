@@ -7,12 +7,12 @@ cz: 10
 normalize: 'avg_sqrt_power'
 quad_weights: true
 lmax: 10
-input_type: NRR
+input_type: RR
 
 
 # model hparams
 model_hparams:
-  is_vae: true
+  is_vae: false
   latent_dim: 16
   net_lmax: 10
   ch_size_list: [16, 16, 16, 16, 16, 16]
@@ -42,13 +42,16 @@ model_hparams:
 # training hparams
 weight_decay: false
 n_epochs: 80
-no_kl_epochs: 25
-warmup_kl_epochs: 35
+no_kl_epochs: 0 # 0 25
+warmup_kl_epochs: 0 # 0 35
 lr: 0.001
-lr_scheduler: 'log_decrease_until_end_of_warmup' # 'reduce_lr_on_plateau'
+lr_scheduler: 'reduce_lr_on_plateau' # 'log_decrease_until_end_of_warmup' 'reduce_lr_on_plateau'
 batch_size: 100
-lambdas: [50.0, 0.2]
-lambdas_schedule: 'linear_up_anneal_kl' # 'constant'
+lambdas: [50.0, 0.0]
+lambdas_schedule: 'constant' # 'linear_up_anneal_kl' 'constant'
+
+# noise for denoising autoencoder
+noise: 0.1 # 0 0.1 0.3 0.5
 
 
 # rng seed

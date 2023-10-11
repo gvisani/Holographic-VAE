@@ -20,6 +20,7 @@ from holographic_vae.so3 import RadialSphericalTensor, MultiChannelRadialSpheric
 from holographic_vae.utils.argparse import *
 from experiments.protein_neighborhoods.src.utils import protein_naming
 import torch
+torch.set_num_threads(1) # should make torch and multiprocessing not collide with each other
 
 
 def callback(nb, selected_masks, selected_weights, frame, rst, mul_rst, rst_normalization):
