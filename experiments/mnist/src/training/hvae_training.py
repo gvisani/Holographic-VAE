@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch import Tensor
 import e3nn
@@ -220,7 +221,7 @@ def hvae_training(experiment_dir: str):
             for optimizer in optimizers:
                 optimizer.zero_grad()
             model.train()
-            x_reconst_loss, kl_divergence, _, (mean, log_var)= model(X, x_vec=X_vec, frame=frame)
+            x_reconst_loss, kl_divergence, _, (mean, log_var) = model(X, x_vec=X_vec, frame=frame, c=F.one_hot(y.long(), num_classes=10).float().to(device))
 
             total_loss = optimizing_step(x_reconst_loss, kl_divergence,
                                             x_lambda, kl_lambda,
@@ -247,7 +248,7 @@ def hvae_training(experiment_dir: str):
                     frame = rot.float().view(-1, 3, 3).to(device)
 
                     model.eval()
-                    x_reconst_loss, kl_divergence, _, (mean, log_var) = model(X, x_vec=X_vec, frame=frame)
+                    x_reconst_loss, kl_divergence, _, (mean, log_var) = model(X, x_vec=X_vec, frame=frame, c=F.one_hot(y.long(), num_classes=10).float().to(device))
 
                     total_loss = x_lambda * x_reconst_loss + kl_lambda * kl_divergence
                     total_loss_with_final_kl = x_lambda * x_reconst_loss + hparams['lambdas'][1] * kl_divergence

@@ -10,6 +10,7 @@ import pylab
 import pandas as pd
 
 import torch
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torch import Tensor
 import e3nn
@@ -130,10 +131,15 @@ def hvae_inference(experiment_dir: str,
 
         z = z_mean
 
-        if hparams['model_hparams']['learn_frame']:
-            x_reconst = model.decode(z, learned_frame)
+        if model.is_conditional:
+            conditioned_z = model.condition_latent_space(z, F.one_hot(y.long(), num_classes=10).float().to(device))
         else:
-            x_reconst = model.decode(z, rot)
+            conditioned_z = z
+
+        if hparams['model_hparams']['learn_frame']:
+            x_reconst = model.decode(conditioned_z, learned_frame)
+        else:
+            x_reconst = model.decode(conditioned_z, rot)
 
         invariants.append(z.detach().cpu().numpy())
 
@@ -511,6 +517,7 @@ def hvae_reconstruction_tests(experiment_dir: str,
     torch.manual_seed(seed)
     idxs = torch.randint(N, size=(n_samples,))
     signal_orig = images_NF[idxs].float()
+    y_orig = torch.tensor(labels_N)[idxs]
 
     # get some random rotation
     rot_matrix = e3nn.o3.rand_matrix(1).float().view(-1, 1, 9).squeeze().unsqueeze(0)
@@ -521,6 +528,10 @@ def hvae_reconstruction_tests(experiment_dir: str,
 
     (z_mean_orig, _), learned_frame_orig = model.encode(put_dict_on_device(make_dict(signal_orig, data_irreps), device))
     (z_mean_rot, _), learned_frame_rot = model.encode(put_dict_on_device(make_dict(signal_rot, data_irreps), device))
+
+    if model.is_conditional:
+        z_mean_orig = model.condition_latent_space(z_mean_orig, F.one_hot(y_orig.long()).float().to(device))
+        z_mean_rot = model.condition_latent_space(z_mean_rot, F.one_hot(y_orig.long()).float().to(device))
 
     # rotate learned frame of original input
     learned_frame_orig_rot = rotate_signal(learned_frame_orig.reshape(-1, 1, 9).squeeze(1).detach().cpu(), o3.Irreps('3x1e'), wigner)
@@ -581,33 +592,62 @@ def hvae_reconstruction_tests(experiment_dir: str,
     ## sample some vectors in the latent space
     ## sample around the prior (zero mean, unit variance)
     if hparams['model_hparams']['is_vae']:
-        print('Plotting some samples...')
 
-        ## initialize generator
-        generator = torch.Generator().manual_seed(seed)
-        
-        z = torch.normal(torch.zeros((n_samples*n_samples, hparams['model_hparams']['latent_dim'])), torch.ones((n_samples*n_samples, hparams['model_hparams']['latent_dim'])), generator=generator)
-        frame = torch.eye(3).repeat(n_samples*n_samples, 1).float().view(-1, 3, 3).squeeze().to(device)
-        x_reconst = model.decode(z.to(device), frame.to(device))
-        rec_inv_NF = real_sph_ift(make_vec(x_reconst).cpu().detach(), ba_grid, max(data_irreps.ls))
+        if not model.is_conditional:
+            print('Plotting some samples...')
+
+            ## initialize generator
+            generator = torch.Generator().manual_seed(seed)
+            
+            z = torch.normal(torch.zeros((n_samples*n_samples, hparams['model_hparams']['latent_dim'])), torch.ones((n_samples*n_samples, hparams['model_hparams']['latent_dim'])), generator=generator)
+            frame = torch.eye(3).repeat(n_samples*n_samples, 1).float().view(-1, 3, 3).squeeze().to(device)
+            x_reconst = model.decode(z.to(device), frame.to(device))
+            rec_inv_NF = real_sph_ift(make_vec(x_reconst).cpu().detach(), ba_grid, max(data_irreps.ls))
 
 
-        for n in range(n_samples**2):
-            fig, ax = plt.subplots(figsize=(4, 4), nrows=1, ncols=1)
-            ax.imshow(rec_inv_NF[n].reshape(60, 60))
-            ax.axis('off')
+            for n in range(n_samples**2):
+                fig, ax = plt.subplots(figsize=(4, 4), nrows=1, ncols=1)
+                ax.imshow(rec_inv_NF[n].reshape(60, 60))
+                ax.axis('off')
+                plt.tight_layout()
+                plt.savefig(os.path.join(experiment_dir, 'reconstructions/sample_n%d-seed=%d.png' % (n, seed)))
+                plt.savefig(os.path.join(experiment_dir, 'reconstructions/sample_n%d-seed=%d.pdf' % (n, seed)))
+                plt.close()
+            
+            fig, axs = plt.subplots(figsize=(4*n_samples, 4*n_samples), nrows=n_samples, ncols=n_samples, sharex=True, sharey=True)
+            for n, ax in enumerate(axs.flatten()):
+                ax.imshow(rec_inv_NF[n].reshape(60, 60))
+                ax.axis('off')
+            
             plt.tight_layout()
-            plt.savefig(os.path.join(experiment_dir, 'reconstructions/sample_n%d-seed=%d.png' % (n, seed)))
-            plt.savefig(os.path.join(experiment_dir, 'reconstructions/sample_n%d-seed=%d.pdf' % (n, seed)))
+            plt.savefig(os.path.join(experiment_dir, 'reconstructions/samples-n_samples=%d-seed=%d.png' % (n_samples, seed)))
+            plt.savefig(os.path.join(experiment_dir, 'reconstructions/samples-n_samples=%d-seed=%d.pdf' % (n_samples, seed)))
             plt.close()
         
-        fig, axs = plt.subplots(figsize=(4*n_samples, 4*n_samples), nrows=n_samples, ncols=n_samples, sharex=True, sharey=True)
-        for n, ax in enumerate(axs.flatten()):
-            ax.imshow(rec_inv_NF[n].reshape(60, 60))
-            ax.axis('off')
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(experiment_dir, 'reconstructions/samples-n_samples=%d-seed=%d.png' % (n_samples, seed)))
-        plt.savefig(os.path.join(experiment_dir, 'reconstructions/samples-n_samples=%d-seed=%d.pdf' % (n_samples, seed)))
-        plt.close()
+        else:
+            print('Plotting some conditional samples...')
+
+            ## initialize generator
+            generator = torch.Generator().manual_seed(seed)
+            
+            z = torch.normal(torch.zeros((10*n_samples, hparams['model_hparams']['latent_dim'])), torch.ones((10*n_samples, hparams['model_hparams']['latent_dim'])), generator=generator)
+            frame = torch.eye(3).repeat(10*n_samples, 1).float().view(-1, 3, 3).squeeze().to(device)
+            y = torch.arange(10).repeat(n_samples).to(device)
+            z = model.condition_latent_space(z.to(device), F.one_hot(y.long(), num_classes=10).float().to(device))
+            x_reconst = model.decode(z.to(device), frame.to(device))
+            rec_inv_NF = real_sph_ift(make_vec(x_reconst).cpu().detach(), ba_grid, max(data_irreps.ls))
+            
+            fig, axs = plt.subplots(figsize=(4*n_samples, 4*10), nrows=10, ncols=n_samples, sharex=True, sharey=True)
+
+            for n in range(10*n_samples):
+                ax = axs[n % 10, n // 10]
+                ax.imshow(rec_inv_NF[n].reshape(60, 60))
+                ax.axis('off')
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(experiment_dir, 'reconstructions/conditional_samples-n_samples=%d-seed=%d.png' % (n_samples, seed)))
+            plt.savefig(os.path.join(experiment_dir, 'reconstructions/conditional_samples-n_samples=%d-seed=%d.pdf' % (n_samples, seed)))
+            plt.close()
+
+
 

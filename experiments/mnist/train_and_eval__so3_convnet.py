@@ -3,8 +3,7 @@ import yaml
 import json
 import argparse
 
-from src.training import hvae_training, hvae_inference, hvae_standard_evaluation, classification_and_clustering_in_latent_space, hvae_reconstruction_tests
-from src.utils.generate_dataset_of_conditional_samples import generate_dataset_of_conditional_samples
+from src.training import so3_convnet_training, so3_convnet_inference
 from holographic_vae.utils.argparse import *
 
 
@@ -13,11 +12,13 @@ if __name__ == '__main__':
     parser.add_argument('--model_dir', type=str, required=True,
                         help='Directory containing the model and experimental results related to it.') # custom name that identifies the model
     
-    parser.add_argument('--training_config', type=optional_str, default='config.yaml',
+    parser.add_argument('--training_config', type=optional_str, default='config__so3_convent.yaml',
                         help='Ignored when --eval_only is toggled.')
     
     parser.add_argument('--eval_only', action='store_true',
                         help='If toggled, then only perform inference and evaluation on the standard test data.')
+    
+    parser.add_argument('--sampled_test_data_filepath', type=optional_str, default=None)
 
     args = parser.parse_args()
 
@@ -42,12 +43,13 @@ if __name__ == '__main__':
 
     if not args.eval_only:
         # launch training script
-        hvae_training(args.model_dir)
+        so3_convnet_training(args.model_dir)
 
     # perform inference, on standard test data, with basic results
-    hvae_inference(args.model_dir, split='test', model_name='lowest_total_loss_with_final_kl_model', verbose=True, loading_bar=True)
-    hvae_standard_evaluation(args.model_dir, split='test', model_name='lowest_total_loss_with_final_kl_model')
-    classification_and_clustering_in_latent_space(args.model_dir, model_name='lowest_total_loss_with_final_kl_model', verbose=True, loading_bar=True)
-    hvae_reconstruction_tests(args.model_dir, split='test', n_samples=5, model_name='lowest_total_loss_with_final_kl_model', verbose=True)
-    generate_dataset_of_conditional_samples(args.model_dir)
+    so3_convnet_inference(args.model_dir, split='test', model_name='lowest_valid_loss_model', verbose=True, batch_size=100)
+
+    # perform inference, on sampled test data, with basic results
+    so3_convnet_inference(args.model_dir, split='sampled_test', test_filepath=args.sampled_test_data_filepath, model_name='lowest_valid_loss_model', verbose=True, batch_size=100)
+
+
     
